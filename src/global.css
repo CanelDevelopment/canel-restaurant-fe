@@ -1,0 +1,117 @@
+@import "tailwindcss";
+
+html {
+  background-color: #3c5646;
+}
+
+body {
+  font-family: "AmsiProCond";
+  background-color: #fff;
+}
+
+/* AmsiProCond fonts */
+@font-face {
+  font-family: "AmsiProCond-Light";
+  src: url("/Fonts/amsipro/AmsiProCond-Light.otf") format("opentype");
+  font-weight: 300;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "AmsiProCond";
+  src: url("/Fonts/amsipro/AmsiProCond-Regular.otf") format("opentype");
+  /* font-weight: 400; */
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "AmsiProCond-SemiBoldItalic";
+  src: url("/Fonts/amsipro/AmsiProCond-SemiBoldItalic.otf") format("opentype");
+  font-weight: 500;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "AmsiProCond-SemiBold";
+  src: url("/Fonts/amsipro/AmsiProCond-SemiBold.otf") format("opentype");
+  font-weight: 600;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "AmsiProCond-Bold";
+  src: url("/Fonts/amsipro/AmsiProCond-Bold.otf") format("opentype");
+  font-weight: 700;
+  font-display: swap;
+}
+
+/* @font-face {
+  font-family: "AmsiProCond-ExtraBold";
+  src: url("/Fonts/amsipro/AmsiProCond-ExtraBold.otf") format("opentype");
+  font-weight: 800;
+  font-display: swap;
+} */
+
+@font-face {
+  font-family: "AmsiProCond-Black";
+  src: url("/Fonts/amsipro/AmsiProCond-Black.otf") format("opentype");
+  /* font-weight: 900; */
+  font-display: swap;
+}
+
+.custom-phone-input .PhoneInputCountrySelectArrow {
+  display: none;
+}
+
+.PhoneInputCountrySelectArrow {
+  display: none;
+}
+
+.react-tel-input .selected-flag .arrow {
+  display: none;
+}
+
+.custom-phone-input .PhoneInputCountryIcon {
+  margin-right: 12px;
+  position: relative;
+}
+
+.custom-phone-input .PhoneInputCountryIcon::after {
+  content: "";
+  position: absolute;
+  right: -10px;
+  top: -5px;
+  height: 28px;
+  width: 1px;
+  background-color: #1111112f;
+}
+
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1; /* Light background for the track */
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: gray; /* Main color for the thumb */
+  border-radius: 10px;
+  border: 2px solid #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: gray; /* Slightly darker shade on hover */
+}
+
+/* For Firefox */
+* {
+  scrollbar-color: gray #f1f1f1;
+  scrollbar-width: thin;
+}
+
+.radial-text-black text {
+  fill: #000 !important;
+}
