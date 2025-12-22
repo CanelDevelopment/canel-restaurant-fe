@@ -19,6 +19,7 @@ type Product = {
   addonItemIds: string[] | null;
   // price: number;
   variants: ProductVariant[] | null;
+  categoryId: string;
 };
 
 // Define the component's props
@@ -92,14 +93,15 @@ export const ProductSection: React.FC<ProductSectionProps> = ({ products }) => {
                 key={product.id}
                 id={product.id}
                 title={product.name}
-                price={`${product.price}`} // Format the price
+                price={`${product.price}`}
                 buttontext="Agregar al carrito"
-                imageSource={product.image} // Use the image from the product data
+                imageSource={product.image}
                 icon={<IoCartOutline size={30} />}
                 discount={product.discount}
                 description={product.description}
                 addonItemIds={product.addonItemIds}
                 // itemW={["70px", "auto"]}
+                categoryId={product.categoryId}
                 variants={product.variants}
               />
             ))}

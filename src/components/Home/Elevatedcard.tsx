@@ -22,7 +22,7 @@ export type ElevatedCardProps = {
   id: string;
   discount: number;
   addonItemIds: string[] | null;
-  volumeDiscountRules: VolumeDiscountRules | null;
+  volumeDiscountRules?: VolumeDiscountRules | null;
   variants: ProductVariant[] | null;
   categoryId: string;
 };
