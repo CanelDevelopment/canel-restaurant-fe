@@ -2,7 +2,7 @@ import { Box, Flex, Icon, Text, useBreakpointValue } from "@chakra-ui/react";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa6";
 import { FrequentCard } from "./frequentCard";
 import { useState } from "react";
-import { useCartActions } from "@/store/cartStore";
+import { useAddToCart } from "@/store/cartStore";
 import { useCreateAddonToCart } from "@/hooks/cart/usecreateaddoncart";
 
 interface Item {
@@ -38,7 +38,7 @@ export const FrequentOrder: React.FC<FrequentOrderProps> = ({ addons }) => {
 
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  const { addToCart } = useCartActions();
+  const addToCart = useAddToCart();
   const { mutate: createAddonToCartMutation } = useCreateAddonToCart();
 
   const handleAddToCart = (item: Item) => {
@@ -100,14 +100,14 @@ export const FrequentOrder: React.FC<FrequentOrderProps> = ({ addons }) => {
           <Text
             fontFamily={"AmsiProCond-Black"}
             color="Cbutton"
-            fontSize={"lg"}
+            fontSize={"xl"}
           >
             Llevados en conjunto
           </Text>
           <Text
             fontFamily={"AmsiProCond"}
             letterSpacing={0.7}
-            fontSize="14px"
+            fontSize="md"
             color="gray.600"
           >
             Pedidos frecuentemente por nuestros clientes

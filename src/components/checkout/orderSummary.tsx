@@ -2,6 +2,7 @@ import { Box, Button, Flex, Text, Spinner, VStack } from "@chakra-ui/react";
 import React from "react";
 import { CartSummary } from "../cart/cartSummary";
 import { useFetchCart } from "@/hooks/cart/usefetchcart";
+import { usePaymentStore } from "@/store/paymentStore"; // Zustand store
 
 interface OrderSummaryProps {
   isSubmitting: boolean;
@@ -9,63 +10,96 @@ interface OrderSummaryProps {
 
 export const OrderSummary: React.FC<OrderSummaryProps> = ({ isSubmitting }) => {
   const { data } = useFetchCart();
+  const { selectedPayment, conversionRate } = usePaymentStore(); // <- get conversionRate
+
+  // Payment labels & symbols
+  const paymentLabelMap: Record<string, string> = {
+    cash: "Efectivo",
+    online: "Bolivares",
+    bolivars: "Zelle",
+  };
+  const currencySymbolMap: Record<string, string> = {
+    cash: "Ref",
+    online: "$",
+    bolivars: "Ref",
+  };
+  const paymentLabel = paymentLabelMap[selectedPayment] || "Efectivo";
+  const currencySymbol = currencySymbolMap[selectedPayment] || "Ref";
 
   return (
     <Box flex={0.6}>
       <Box color={"#111"} bg="Cgreen" p={4} px={6} py={6} rounded="2xl">
-        {data?.map((item) => (
-          <VStack key={item.id} align="stretch" mb={3}>
-            <Flex
-              justify="space-between"
-              color={"#646464"}
-              fontFamily={"AmsiProCond-Black"}
-              mb={2}
-            >
-              <Text fontSize={"2xl"}>
-                {item.product.name}{" "}
-                <Text as="span" fontSize="md" color="gray.500">
-                  (x{item.quantity})
-                </Text>
-              </Text>
-              <Text fontSize={"xl"}>Ref. {item.product.price}</Text>
-            </Flex>
+        {data?.map((item) => {
+          const basePrice =
+            item.variantPrice && item.variantPrice > 0
+              ? item.variantPrice
+              : item.product.price;
+          const convertedPrice =
+            selectedPayment === "cash" ? basePrice : basePrice * (conversionRate || 1);
 
-            {/* Instructions agar di hui hain */}
-            {item.instructions && (
-              <Text
-                fontSize="sm"
-                color="gray.700"
-                fontStyle="italic"
-                pl={1}
-                mt={-1}
+          return (
+            <VStack key={item.id} align="stretch" mb={3}>
+              <Flex
+                justify="space-between"
+                color={"#646464"}
+                fontFamily={"AmsiProCond-Black"}
+                mb={2}
               >
-                "{item.instructions}"
-              </Text>
-            )}
+                <Text fontSize={"2xl"}>
+                  {item.product.name}{" "}
+                  <Text as="span" fontSize="md" color="gray.500">
+                    (x{item.quantity})
+                  </Text>
+                </Text>
+                <Text fontSize={"xl"}>
+                  {currencySymbol} {convertedPrice}
+                </Text>
+              </Flex>
 
-            {/* --- Addons display --- */}
-            {item.selectedAddons && item.selectedAddons.length > 0 && (
-              <VStack align="stretch" pl={4}>
-                {item.selectedAddons.map((addon, idx) => (
-                  <Flex
-                    key={idx}
-                    justify="space-between"
-                    color="gray.600"
-                    fontSize="sm"
-                  >
-                    <Text>
-                      ➤ {addon.addonItem.name}{" "}
-                      <Text as="span" color="gray.500">
-                        (x{addon.quantity})
-                      </Text>
-                    </Text>
-                    <Text>Ref. {addon.addonItem.price}</Text>
-                  </Flex>
-                ))}
-              </VStack>
-            )}
-          </VStack>
-        ))}
+              {item.instructions && (
+                <Text
+                  fontSize="sm"
+                  color="gray.700"
+                  fontStyle="italic"
+                  pl={1}
+                  mt={-1}
+                >
+                  "{item.instructions}"
+                </Text>
+              )}
+
+              {item.selectedAddons && item.selectedAddons.length > 0 && (
+                <VStack align="stretch" pl={4}>
+                  {item.selectedAddons.map((addon, idx) => {
+                    const addonPrice =
+                      selectedPayment === "cash"
+                        ? addon.addonItem.price
+                        : addon.addonItem.price * (conversionRate || 1);
+
+                    return (
+                      <Flex
+                        key={idx}
+                        justify="space-between"
+                        color="gray.600"
+                        fontSize="sm"
+                      >
+                        <Text>
+                          ➤ {addon.addonItem.name}{" "}
+                          <Text as="span" color="gray.500">
+                            (x{addon.quantity})
+                          </Text>
+                        </Text>
+                        <Text>
+                          {currencySymbol} {addonPrice.toFixed(2)}
+                        </Text>
+                      </Flex>
+                    );
+                  })}
+                </VStack>
+              )}
+            </VStack>
+          );
+        })}
       </Box>
 
       <Box
@@ -78,36 +112,12 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ isSubmitting }) => {
         fontFamily={"AmsiProCond-Black"}
       >
         <Text fontSize={"2xl"}>Su Orden</Text>
+        <Text mt={1} fontSize="md" color="gray.700">
+          Método de Pago: {paymentLabel}
+        </Text>
       </Box>
 
       <Box p={4} color={"#111"} bgColor={"#F9FFFC"} roundedBottom={"2xl"}>
-        {/* <VStack
-          fontSize={"14px"}
-          spaceY={0}
-          align="stretch"
-          fontFamily={"AmsiProCond"}
-        >
-          <Flex justify="space-between" fontSize={"md"}>
-            <Text>Subtotal</Text>
-            <Text>Ref 2</Text>
-          </Flex>
-          <Flex justify="space-between" fontSize={"md"}>
-            <Text>I.V.A</Text>
-            <Text>Ref 3</Text>
-          </Flex>
-          <Flex justify="space-between" fontSize={"md"}>
-            <Text>Costo de envío</Text>
-            <Text>Ref 3.99</Text>
-          </Flex>
-          <Flex justify="space-between" fontSize={"md"}>
-            <Text color="Cgreen">Descuento</Text>
-            <Text color="Cgreen">Ref 2</Text>
-          </Flex>
-          <Flex justify="space-between" fontFamily={"AmsiProCond-Bold"}>
-            <Text>Total final</Text>
-            <Text>Ref 21.39</Text>
-          </Flex>
-        </VStack> */}
         <CartSummary />
       </Box>
 
@@ -122,6 +132,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ isSubmitting }) => {
         pb={2}
         fontSize={"lg"}
         disabled={isSubmitting}
+        fontWeight={"semibold"}
       >
         {isSubmitting ? <Spinner size="sm" /> : "Ordenar"}
       </Button>

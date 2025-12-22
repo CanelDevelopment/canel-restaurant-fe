@@ -27,18 +27,6 @@ export const OrderType: React.FC<OrderTypeProps> = ({
       image: "/Icon/pickup.png",
       boxWidth: 10,
     },
-    {
-      label: "Drive In Deliver",
-      apiValue: "drive-in",
-      image: "/Icon/drive_in.png",
-      boxWidth: 14,
-    },
-    {
-      label: "Dine-In",
-      apiValue: "dine-in",
-      image: "/Icon/dine_in.png",
-      boxWidth: 20,
-    },
   ];
 
   const selectedBg = useColorModeValue("#D4F5CE", "#239113"); // Using a green similar to the screenshot
@@ -62,7 +50,7 @@ export const OrderType: React.FC<OrderTypeProps> = ({
             color={"#000"}
             mb={4}
           >
-            Order Type
+            TIPO DE ORDEN
           </Text>
 
           <Box

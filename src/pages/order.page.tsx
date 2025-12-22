@@ -94,7 +94,7 @@ const Order: React.FC = () => {
                     rounded="md"
                     ml={2}
                   >
-                    {order.status}
+                    {order.status === "pending" ? "Pendiente" : order.status}
                   </Box>
                   <Box as="span" ml={2}>
                     <Image src="/Background/red_icon.png" w={["40%", "56%"]} />
@@ -130,13 +130,7 @@ const Order: React.FC = () => {
           </Flex>
         </Box>
 
-        <Box
-          // display={"flex"}
-          // flexDirection={["column", "column", "row"]}
-          // bgColor={"#F9FFFC"}
-          // position={"relative"}
-          ref={printRef}
-        >
+        <Box ref={printRef}>
           <Box
             display={"flex"}
             flexDirection={["column", "column", "row"]}
@@ -155,9 +149,9 @@ const Order: React.FC = () => {
                   ...item,
                   discount: item.discount,
                   price:
-                    typeof item.price === "string"
-                      ? parseFloat(item.price)
-                      : item.price,
+                    typeof item.product.price === "string"
+                      ? parseFloat(item.product.price)
+                      : item.product.price,
                 })),
               }}
               orderType={order.type as TOrderType}

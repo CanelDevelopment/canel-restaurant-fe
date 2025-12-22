@@ -1,6 +1,7 @@
 import type { ErrorWithMessage } from "../../configs/axios.config";
 import { useQuery } from "@tanstack/react-query";
 import { axios, type WithMessage } from "@/configs/axios.config";
+import type { ProductVariant } from "@/components/admin/food Item/newitemcontent";
 
 type Category = {
   id: string;
@@ -11,7 +12,7 @@ type Category = {
   updatedAt: string;
 };
 
-type Products = {
+export type Products = {
   branchId: string[] | undefined;
   availability: any;
   discount: number;
@@ -25,6 +26,7 @@ type Products = {
   createdAt: string;
   category: Category | null;
   status: string;
+  variants: ProductVariant[];
 };
 
 // Custom hook

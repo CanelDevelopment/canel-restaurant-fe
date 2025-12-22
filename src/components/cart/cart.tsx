@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { useCartStore } from "@/store/cartStore";
 import { useFetchCart } from "@/hooks/cart/usefetchcart";
 import { useFetchGroupedAddons } from "@/hooks/addon/usefetchgroupedaddon";
+import { useFetchBranch } from "@/hooks/branch/usefetchbranch";
 import { CartItem } from "./cartItem";
 import { FrequentOrder } from "./frequentOrder";
 import { CartSummary } from "./cartSummary";
@@ -21,6 +22,15 @@ import OrderDeliveryInfo from "./orderdeliverytime";
 import { useCalculationStore } from "@/store/calculationStore";
 import { useFetchCurrentUser } from "@/hooks/user/usefetchuser";
 import { LoginPromptModal } from "./logininvitationmodal";
+// import type { Branch } from "@/pages/locationform.page";
+
+// Define the Branch interface to ensure type safety
+// interface Branch {
+//   id: string;
+//   name: string;
+//   orderType: "pickup" | "delivery" | "both";
+//   // Add other properties if they exist
+// }
 
 interface Addon {
   addonId: string;
@@ -37,53 +47,71 @@ interface Addon {
 }
 
 export const Cart: React.FC = () => {
-  const { cart } = useCartStore();
+  const { cart: cartStore } = useCartStore();
   const { data: currentUser, isLoading: isUserLoading } = useFetchCurrentUser();
-  const { isLoading: isCartLoading } = useFetchCart();
   const { data: allAddons, isLoading: addonsLoading } = useFetchGroupedAddons();
+  const { isLoading: isCartLoading } = useFetchCart();
+  const { data: allBranches, isLoading: isLoadingBranches } = useFetchBranch();
+
+  const navigate = useNavigate();
+  const [promptOpen, setPromptOpen] = useState(false);
 
   const orderType = useCalculationStore((state) => state.orderType);
   const setOrderType = useCalculationStore((state) => state.setOrderType);
+
+  const liveBranch = useMemo(() => {
+    const storedBranchData = localStorage.getItem("selectedBranch");
+
+    if (!storedBranchData || !allBranches) {
+      return;
+    }
+
+    try {
+      const storedBranch: { id: string } = JSON.parse(storedBranchData);
+
+      return allBranches.find((b) => b.id === storedBranch.id);
+    } catch (error) {
+      console.error("Failed to parse or find live branch data:", error);
+      return undefined;
+    }
+  }, [allBranches]);
+
+  const isOrderTypeSelectable = liveBranch?.orderType === "both";
 
   const selectedArea = localStorage.getItem("selectedArea");
   const city = localStorage.getItem("selectedCity") || "";
 
   useEffect(() => {
-    const deliveryType = localStorage.getItem("deliveryType");
-    if (deliveryType === "delivery") {
-      setOrderType("delivery");
-    } else {
-      setOrderType("pickup");
+    if (liveBranch) {
+      if (
+        liveBranch.orderType === "pickup" ||
+        liveBranch.orderType === "delivery"
+      ) {
+        setOrderType(liveBranch.orderType);
+        localStorage.setItem("deliveryType", liveBranch.orderType);
+      } else {
+        const lastSelectedType = localStorage.getItem("deliveryType");
+        setOrderType(lastSelectedType === "delivery" ? "delivery" : "pickup");
+      }
     }
-  }, [setOrderType]);
-
-  const initialDeliveryType = localStorage.getItem("deliveryType");
-
-  const [inCartDeliveryType, _setInCartDeliveryType] = useState(
-    initialDeliveryType || "pickup"
-  );
+  }, [liveBranch, setOrderType]);
 
   const handleSetDeliveryType = (type: "pickup" | "delivery") => {
     setOrderType(type);
     localStorage.setItem("deliveryType", type);
     localStorage.setItem("selectedFromCart", "true");
-
     if (type === "pickup") {
       localStorage.removeItem("selectedArea");
     }
   };
 
   const relevantAddons = useMemo<Addon[]>(() => {
-    if (!allAddons || !cart) return [];
-
+    if (!allAddons || !cartStore) return [];
     const cartAddonMap = new Map<string, string>();
-
-    cart.forEach((product) => {
+    cartStore.forEach((product) => {
       product.addonItemIds?.forEach((id) => cartAddonMap.set(id, product.id));
     });
-
     if (cartAddonMap.size === 0) return [];
-
     return allAddons
       .map((addonGroup) => {
         const relevantItems = addonGroup.items
@@ -93,9 +121,7 @@ export const Cart: React.FC = () => {
             productId: cartAddonMap.get(item.id) || "",
             quantity: 1,
           }));
-
         if (relevantItems.length === 0) return null;
-
         return {
           addonId: addonGroup.addonId,
           addonName: addonGroup.addonName,
@@ -103,36 +129,34 @@ export const Cart: React.FC = () => {
         } as Addon;
       })
       .filter((group): group is Addon => group !== null);
-  }, [cart, allAddons]);
+  }, [cartStore, allAddons]);
 
-  const isPageLoading = isUserLoading || (!!currentUser && isCartLoading);
+  const isPageLoading =
+    isUserLoading || (!!currentUser && isCartLoading) || isLoadingBranches;
 
   if (isPageLoading) {
-    <Center py={20}>
-      <Spinner size="xl" color="Cbutton" />
-    </Center>;
-  }
-
-  if (cart.length === 0) {
     return (
       <Center py={20}>
-        <Text>No items in cart.</Text>
+        <Spinner size="xl" color="Cbutton" />
       </Center>
     );
   }
 
-  const selectedFromCart = localStorage.getItem("selectedFromCart") === "true";
-  const showDeliveryTypeToggle =
-    selectedFromCart || initialDeliveryType !== "delivery";
+  if (cartStore.length === 0) {
+    return (
+      <Center py={20}>
+        <Text>No hay artículos en el carrito.</Text>
+      </Center>
+    );
+  }
 
-  const showLocationDropdown =
-    inCartDeliveryType === "delivery" && !selectedArea;
-
-  const [promptOpen, setPromptOpen] = useState(false);
-  const navigate = useNavigate();
+  const showLocationDropdown = orderType === "delivery" && !selectedArea;
 
   const handleCheckout = () => {
-    if (currentUser) {
+    const token =
+      localStorage.getItem("token") || localStorage.getItem("accessToken");
+
+    if ((currentUser && currentUser.id) || token) {
       navigate("/checkout");
     } else {
       setPromptOpen(true);
@@ -141,12 +165,14 @@ export const Cart: React.FC = () => {
 
   const handleRedirectToLogin = () => {
     setPromptOpen(false);
-    navigate("/signin");
+    navigate("/signin?redirect=/checkout");
   };
+
+  console.log("cartStore", cartStore);
 
   return (
     <>
-      {cart.map((item) => (
+      {cartStore.map((item) => (
         <CartItem
           key={item.id}
           id={item.id}
@@ -177,10 +203,10 @@ export const Cart: React.FC = () => {
         <Separator borderColor="black" opacity={0.05} width="100%" mt={3} />
       </Box>
 
-      {/* ✅ Pass prop here */}
       <CartSummary />
 
-      {showDeliveryTypeToggle && (
+      {/* This conditional rendering now depends on the LIVE branch data */}
+      {isOrderTypeSelectable && (
         <Box width="full" mt={4}>
           <HStack p="1" bg="gray.200" borderRadius="md">
             <Button
@@ -192,6 +218,7 @@ export const Cart: React.FC = () => {
               py={5}
               fontFamily={"AmsiProCond"}
               width="50%"
+              fontSize={"md"}
             >
               <Image w={"11%"} loading="lazy" src="/Icon/carton.png" />
               Pick-up
@@ -205,6 +232,7 @@ export const Cart: React.FC = () => {
               py={5}
               fontFamily={"AmsiProCond"}
               width="47%"
+              fontSize={"md"}
             >
               Delivery
               <Image w={"18%"} loading="lazy" src="/Icon/delivery.png" />
@@ -213,16 +241,18 @@ export const Cart: React.FC = () => {
         </Box>
       )}
 
-      {showLocationDropdown && <SelectLocation cityName={city} />}
+      <SelectLocation cityName={city} isVisible={showLocationDropdown} />
 
       <Button
         onClick={handleCheckout}
-        bgColor={"#000"}
+        type="button"
+        bgColor={"Cbutton"}
         pb={1}
         w={"full"}
         mt={3}
+        fontSize={"md"}
       >
-        Passer à la caisse
+        Completar Orden
       </Button>
 
       <LoginPromptModal

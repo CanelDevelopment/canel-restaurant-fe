@@ -14,7 +14,7 @@ import {
 } from "@chakra-ui/react";
 import { RxCross2 } from "react-icons/rx";
 import { IoCheckmark } from "react-icons/io5";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { format } from "date-fns";
 import { AssignOrderModal } from "./assingordermodal";
 import type { OrderDetails } from "@/hooks/order/usefetchallorder";
@@ -25,6 +25,11 @@ import {
   type CalculationItem,
 } from "@/store/calculationStore";
 import type { TOrderType } from "@/components/order/orderPayment";
+import {
+  getCoordinatesFromAddress,
+  getDistanceInKm,
+  getDeliveryPrice,
+} from "@/helper/calculationofdistance";
 
 interface IncomingOrdersModalProps {
   order: OrderDetails;
@@ -38,6 +43,66 @@ export const IncomingOrdersModal: React.FC<IncomingOrdersModalProps> = ({
   const { mutate: updateOrder } = useUpdateOrder();
   const { data: branch } = useFetchSpecificBranch(order.branchId);
 
+  // New state to hold the calculated price
+  const [calculatedDeliveryCost, setCalculatedDeliveryCost] = useState(0);
+
+  useEffect(() => {
+    async function computeDelivery() {
+      if (order.type !== "delivery") {
+        setCalculatedDeliveryCost(0);
+        return;
+      }
+
+      if (branch?.location && order.location) {
+        try {
+          const locRaw = branch.location as any;
+          let branchLat = 0;
+          let branchLng = 0;
+
+          if (typeof locRaw === "string") {
+            const parsed = JSON.parse(locRaw);
+            if (Array.isArray(parsed)) {
+              branchLat = parsed[0];
+              branchLng = parsed[1];
+            } else {
+              branchLat = parsed.lat;
+              branchLng = parsed.lng;
+            }
+          } else {
+            branchLat = locRaw.lat;
+            branchLng = locRaw.lng;
+          }
+
+          const branchLocation = {
+            lat: Number(branchLat),
+            lng: Number(branchLng),
+          };
+
+          const userLocation = await getCoordinatesFromAddress(order.location);
+
+          if (userLocation) {
+            const distance = await getDistanceInKm(
+              branchLocation,
+              userLocation
+            );
+
+            // Use the rates from the fetched branch data
+            const deliveryRates = branch.deliveryRates || [];
+            const price = getDeliveryPrice(distance, deliveryRates);
+
+            setCalculatedDeliveryCost(price);
+          }
+        } catch (error) {
+          console.error("Error calculating modal delivery price:", error);
+        }
+      }
+    }
+
+    if (branch && order) {
+      computeDelivery();
+    }
+  }, [branch, order]);
+
   const handleAcceptOrder = (id: string) => {
     updateOrder({
       id,
@@ -45,7 +110,6 @@ export const IncomingOrdersModal: React.FC<IncomingOrdersModalProps> = ({
     });
   };
 
-  // Function to handle cancelling the order
   const handleCancelOrder = (id: string) => {
     updateOrder({
       id,
@@ -67,9 +131,9 @@ export const IncomingOrdersModal: React.FC<IncomingOrdersModalProps> = ({
         quantity: item.quantity,
         product: {
           id: item.id || "unknown",
-          name: item.productName || "Product",
-          price: item.price,
-          discount: item.discount,
+          name: item.productName || "Producto",
+          price: Number(item.price), // Ensure Number
+          discount: Number(item.discount || 0),
         },
         selectedAddons:
           item.orderAddons?.map((addon) => ({
@@ -77,23 +141,28 @@ export const IncomingOrdersModal: React.FC<IncomingOrdersModalProps> = ({
             addonItem: {
               id: addon.addonItem?.id || "",
               name: addon.addonItem?.name || "",
-              price: addon.price,
-              discount: addon.addonItem?.discount || 0,
+              price: Number(addon.price), // Ensure Number
+              discount: Number(addon.addonItem?.discount || 0),
             },
           })) || [],
       })
     );
 
-    const summary = calculateTotals(transformedItems, order.type as TOrderType);
+    // Pass the calculated state variable here
+    const summary = calculateTotals(
+      transformedItems,
+      order.type as TOrderType,
+      calculatedDeliveryCost
+    );
 
     return {
       subtotal: summary.subtotal,
       discount: summary.discount,
-      tax: summary.tax,
+      // tax: summary.tax,
       deliveryCost: summary.shippingCost,
       grandTotal: summary.finalTotal,
     };
-  }, [order]);
+  }, [order, calculatedDeliveryCost]);
 
   const [deliveryTime, setDeliveryTime] = useState(
     new Date("2025-05-29T21:25:00")
@@ -103,14 +172,14 @@ export const IncomingOrdersModal: React.FC<IncomingOrdersModalProps> = ({
     setDeliveryTime(new Date(deliveryTime.getTime() + minutes * 60000));
 
   const formatTime = (date: Date) =>
-    date.toLocaleTimeString("en-US", {
+    date.toLocaleTimeString("es-ES", {
       hour: "2-digit",
       minute: "2-digit",
       hour12: true,
     });
 
   const selectedLocationStats = [
-    { label: "Ciudad", value: branch?.city.name || "N/A" }, // depends if city is in your response
+    { label: "Ciudad", value: branch?.city.name || "N/A" },
     { label: "Sucursal", value: branchName || order.branchId || "N/A" },
     { label: "Área", value: branch?.areas || "N/A" },
   ];
@@ -167,10 +236,9 @@ export const IncomingOrdersModal: React.FC<IncomingOrdersModalProps> = ({
                         w={"40%"}
                         mb={3}
                       >
-                        ID del Pedido# {order.id.slice(0, 6).toUpperCase()}
+                        Pedido ID# {order.id.slice(0, 6).toUpperCase()}
                       </Text>
                       <Button
-                        // p={3}
                         rounded="md"
                         textAlign={"center"}
                         color={"white"}
@@ -187,7 +255,11 @@ export const IncomingOrdersModal: React.FC<IncomingOrdersModalProps> = ({
                         textTransform="capitalize"
                         pb={1}
                       >
-                        {order.status}
+                        {order.status === "delivered"
+                          ? "Entregado"
+                          : order.status === "pending"
+                          ? "Pendiente"
+                          : order.status}
                       </Button>
                     </Flex>
 
@@ -230,16 +302,19 @@ export const IncomingOrdersModal: React.FC<IncomingOrdersModalProps> = ({
                           <RxCross2 />
                           <Text pb={0.5}>Cancelar</Text>
                         </Button>
-                        <Button
-                          bgColor={"#7AA18A"}
-                          w={100}
-                          color={"#fff"}
-                          fontFamily={"AmsiProCond"}
-                          onClick={() => handleAcceptOrder(order.id)}
-                        >
-                          <IoCheckmark />
-                          <Text pb={0.5}>Aceptar</Text>
-                        </Button>
+
+                        {order.status === "pending" ? (
+                          <Button
+                            bgColor={"#7AA18A"}
+                            w={100}
+                            color={"#fff"}
+                            fontFamily={"AmsiProCond"}
+                            onClick={() => handleAcceptOrder(order.id)}
+                          >
+                            <IoCheckmark />
+                            <Text pb={0.5}>Aceptar</Text>
+                          </Button>
+                        ) : null}
                       </Flex>
                     </Flex>
 
@@ -253,7 +328,7 @@ export const IncomingOrdersModal: React.FC<IncomingOrdersModalProps> = ({
                           rounded={"lg"}
                           p={3}
                         >
-                          {/* --- Start of Main Item Loop --- */}
+                          {/* --- Bucle de artículos principales --- */}
                           {order.orderItems.map((item) => (
                             <Box
                               key={item.id}
@@ -262,7 +337,7 @@ export const IncomingOrdersModal: React.FC<IncomingOrdersModalProps> = ({
                               pb={2}
                               mb={2}
                             >
-                              {/* 1. Render Main Product Info */}
+                              {/* 1. Producto principal */}
                               <Flex
                                 justifyContent="space-between"
                                 fontFamily="AmsiProCond-Black"
@@ -275,7 +350,7 @@ export const IncomingOrdersModal: React.FC<IncomingOrdersModalProps> = ({
                                 </Text>
                               </Flex>
 
-                              {/* 2. Render Instructions for Main Product */}
+                              {/* 2. Instrucciones */}
                               {typeof item.instructions === "string" &&
                                 item.instructions.trim() !== "" && (
                                   <Text
@@ -288,7 +363,7 @@ export const IncomingOrdersModal: React.FC<IncomingOrdersModalProps> = ({
                                   </Text>
                                 )}
 
-                              {/* --- CORRECTION: Map Addons INSIDE the item loop --- */}
+                              {/* 3. Addons */}
                               {item.orderAddons &&
                                 item.orderAddons.length > 0 && (
                                   <Stack pl={4} mt={1}>
@@ -328,15 +403,13 @@ export const IncomingOrdersModal: React.FC<IncomingOrdersModalProps> = ({
                                 Ref {calculatedTotals.subtotal.toFixed(2)}
                               </Text>
                             </Flex>
-                            <Flex justify="space-between">
+                            {/* <Flex justify="space-between">
                               <Text>Impuesto</Text>
                               <Text>Ref {calculatedTotals.tax.toFixed(2)}</Text>
-                            </Flex>
+                            </Flex> */}
                             <Flex justify="space-between">
                               <Text>Costo de Entrega</Text>
-                              <Text>
-                                Ref {calculatedTotals.deliveryCost.toFixed(2)}
-                              </Text>
+                              <Text>Ref {calculatedTotals.deliveryCost}</Text>
                             </Flex>
                             {calculatedTotals.discount > 0 && (
                               <Flex justify="space-between" color="Cbutton">
@@ -370,7 +443,7 @@ export const IncomingOrdersModal: React.FC<IncomingOrdersModalProps> = ({
                             fontSize="sm"
                           >
                             <Flex justify="space-between">
-                              <Text>Nom de Sucursal:</Text>
+                              <Text>Nombre de Sucursal:</Text>
                               <Text>{branchName}</Text>
                             </Flex>
                             <Flex justify="space-between">
@@ -484,9 +557,29 @@ export const IncomingOrdersModal: React.FC<IncomingOrdersModalProps> = ({
                         </Stack>
                       </Flex>
                     </Box>
+
+                    {/* --- Delivery / Payment Image --- */}
+                    {order.onlinePaymentProveImage ? (
+                      <Box p={5}>
+                        <Text
+                          fontSize={"16px"}
+                          fontFamily={"AmsiProCond-Black"}
+                          mb={2}
+                        >
+                          Comprobante de Entrega / Pago
+                        </Text>
+                        <Image
+                          src={order.onlinePaymentProveImage}
+                          alt="Imagen del Pedido"
+                          borderRadius="md"
+                          maxH="250px"
+                          objectFit="cover"
+                        />
+                      </Box>
+                    ) : null}
                   </Box>
 
-                  {/* --- RIGHT PANEL (DYNAMIC) --- */}
+                  {/* --- PANEL DERECHO --- */}
                   <Box
                     width={["100%", "100%", "35%"]}
                     bg={"Dgreen"}
@@ -497,10 +590,7 @@ export const IncomingOrdersModal: React.FC<IncomingOrdersModalProps> = ({
                     <Center flexDirection={"column"}>
                       <Avatar.Root width={"150px"} height={"150px"} mt={4}>
                         <Avatar.Fallback name={order.name} />
-                        <Avatar.Image
-                          // src={`https://i.pravatar.cc/300?u=${order.userId}`}
-                          alt={order.name}
-                        />
+                        <Avatar.Image alt={order.name} />
                       </Avatar.Root>
                       <Text
                         fontFamily={"AmsiProCond"}
@@ -520,14 +610,8 @@ export const IncomingOrdersModal: React.FC<IncomingOrdersModalProps> = ({
                           justifyContent="space-between"
                           alignItems="center"
                         >
-                          <Text>Nom:</Text>
-                          <Text
-                            // onClick={clipboardName.copy}
-                            cursor="pointer"
-                            display="flex"
-                            alignItems="center"
-                            gap={2}
-                          >
+                          <Text>Nombre:</Text>
+                          <Text cursor="pointer" display="flex" gap={2}>
                             {order.name}
                           </Text>
                         </Flex>
@@ -536,20 +620,13 @@ export const IncomingOrdersModal: React.FC<IncomingOrdersModalProps> = ({
                           alignItems="center"
                         >
                           <Text>Teléfono:</Text>
-                          <Text
-                            // onClick={clipboardPhone.copy}
-                            cursor="pointer"
-                            display="flex"
-                            alignItems="center"
-                            gap={2}
-                          >
+                          <Text cursor="pointer" display="flex" gap={2}>
                             {order.phoneNumber}
                           </Text>
                         </Flex>
                         <Flex justifyContent="space-between" alignItems="start">
-                          <Text>Adresse:</Text>
+                          <Text>Dirección:</Text>
                           <Text
-                            // onClick={clipboardLocation.copy}
                             cursor="pointer"
                             display="flex"
                             alignItems="center"
@@ -584,12 +661,6 @@ export const IncomingOrdersModal: React.FC<IncomingOrdersModalProps> = ({
                         ))}
                       </DataList.Root>
                     </Box>
-                    {/* <Box p={5}>
-                          <Text fontSize={"16px"} fontFamily={"AmsiProCond-Black"}>
-                            Historial
-                          </Text>
-                          
-                        </Box> */}
                   </Box>
                 </Flex>
               </Dialog.Body>
@@ -609,7 +680,6 @@ export const IncomingOrdersModal: React.FC<IncomingOrdersModalProps> = ({
       <AssignOrderModal
         isOpen={isAssignModalOpen}
         onClose={() => setAssignModalOpen(false)}
-        // branchName={branchName}
         order={order}
       />
     </>

@@ -6,6 +6,7 @@ import {
   type CalculationItem,
 } from "@/store/calculationStore";
 import { useCartStore, type CartItem } from "@/store/cartStore";
+import { usePaymentStore } from "@/store/paymentStore"; // <- Zustand store
 
 interface SummaryItemProps {
   label: string;
@@ -39,13 +40,36 @@ type CartSummaryProps = {
 export const CartSummary: React.FC<CartSummaryProps> = () => {
   const cartFromStore = useCartStore((state) => state.cart);
   const setItems = useCalculationStore((state) => state.setItems);
+  const deliveryCost = useCalculationStore((state) => state.deliveryCost);
 
   const summary = usePriceCalculations();
+
+  const { selectedPayment, conversionRate } = usePaymentStore(); // <- Get payment & conversion
+  console.log(conversionRate, selectedPayment)
+  // Decide currency symbol
+  const currencySymbol =
+    selectedPayment === "cash"
+      ? "Ref"
+      : selectedPayment === "online"
+      ? "VED"
+      : "Ref"; // Example for Bolivars / Zelle
+
+  // Convert all relevant values
+  const convertedSubtotal =
+    selectedPayment === "cash" ? summary.subtotal : summary.subtotal * (conversionRate || 1);
+  const convertedDiscount =
+    selectedPayment === "cash" ? summary.discount : summary.discount * (conversionRate || 1);
+  const convertedDelivery =
+    deliveryCost && selectedPayment !== "cash" ? deliveryCost * (conversionRate || 1) : deliveryCost;
+  const convertedTotal =
+    selectedPayment === "cash" ? summary.finalTotal : summary.finalTotal * (conversionRate || 1);
 
   useEffect(() => {
     if (cartFromStore) {
       const transformedItems: CalculationItem[] = cartFromStore.map(
         (item: CartItem) => {
+          const priceToUse =
+            item.variantPrice && item.variantPrice > 0 ? item.variantPrice : item.price;
           return {
             quantity: item.quantity,
             instructions: item.instructions || "",
@@ -53,10 +77,15 @@ export const CartSummary: React.FC<CartSummaryProps> = () => {
             product: {
               id: item.id,
               name: item.name,
-              price: item.price,
+              price: priceToUse,
               image: item.image,
               discount: item.discount,
               addonItemIds: item.addonItemIds,
+              categoryId:
+                (item as any).categoryId || (item as any).category?.id,
+              volumeDiscountRules:
+                (item as any).volumeDiscountRules ||
+                (item as any).category?.volumeDiscountRules,
             },
           };
         }
@@ -67,33 +96,28 @@ export const CartSummary: React.FC<CartSummaryProps> = () => {
 
   return (
     <Box py={4}>
-      <VStack align="stretch" fontSize={"sm"}>
+      <VStack align="stretch" fontSize={"md"}>
         <SummaryItem
           label="Subtotal"
-          value={`Ref ${summary.subtotal.toFixed(2)}`}
+          value={`${currencySymbol} ${convertedSubtotal.toFixed(2)}`}
           fontFamily={"AmsiProCond-Bold"}
         />
         <SummaryItem
           label="Descuento"
-          value={`- Ref ${summary.discount.toFixed(2)}`}
+          value={`- ${currencySymbol} ${convertedDiscount.toFixed(2)}`}
           labelColor="Cbutton"
           valueColor="Cbutton"
         />
-        <SummaryItem
-          label="I.V.A (10%)"
-          value={`Ref ${summary.tax.toFixed(2)}`}
-          fontFamily={"AmsiProCond"}
-        />
-        {summary.shippingCost > 0 && (
+        {deliveryCost > 0 && (
           <SummaryItem
             label="Costo de envío"
-            value={`Ref ${summary.shippingCost.toFixed(2)}`}
+            value={`${currencySymbol} ${convertedDelivery.toFixed(2)}`}
             fontFamily={"AmsiProCond"}
           />
         )}
         <SummaryItem
           label="Total final"
-          value={`Ref ${summary.finalTotal.toFixed(2)}`}
+          value={`${currencySymbol} ${convertedTotal.toFixed(2)}`}
           fontFamily={"AmsiProCond-Bold"}
         />
       </VStack>

@@ -8,7 +8,7 @@ const Footer: React.FC = () => {
   const { data } = useFetchLinks();
   const instagramUrl = data?.instagram || "";
   const facebookUrl = data?.facebook || "";
-  console.log("this is data", data);
+
   return (
     <>
       <Box
@@ -16,7 +16,7 @@ const Footer: React.FC = () => {
         bgImage={"url(/Background/greenBg.png)"}
         bgSize={"cover"}
         width={"full"}
-        minHeight={["40vh", "43vh", "50vh"]}
+        minHeight={["46vh", "43vh", "384px"]}
         px={4}
         py={0.5}
       >
@@ -43,27 +43,28 @@ const Footer: React.FC = () => {
             bg={"white"}
           />
           <Heading
-            fontSize={["lg", "xl", "2xl", "4xl"]}
+            fontSize={["xl", "xl", "2xl", "4xl"]}
             color={"Cgreen"}
             py={6}
             lineHeight={"1.2"}
             fontFamily={"AmsiProCond"}
           >
-            GET THE BEST OF CANEL DEVLIVERED TO <br /> YOUR DOOR
+            RECIBE LO MEJOR DE CANEL EN LA <br /> PUERTA DE TU CASA
           </Heading>
           <Text
             width={["full", "70%", "70%", "50%"]}
             color={"white"}
-            fontSize={["8px", "10px", "12px", "13px"]}
+            fontSize={["xs", "10px", "12px", "13px"]}
             fontFamily={"AmsiProCond-Light"}
             pb={{ base: 3, md: 8 }}
             letterSpacing={[1.2, 1.5]}
           >
-            Explore the amazing food variety from Canel Restaurant. Indulge in
-            our wide range of traditional desserts and savory dishes, all made
-            with the freshest ingredients. If you're craving authentic,
-            flavorful meals or mouthwatering sweets, order now and enjoy a taste
-            of tradition delivered right to your doorstep.
+            Explora la increíble variedad de comida de Canel Restaurante.
+            Deléitate con nuestra amplia gama de postres tradicionales y platos
+            salados, todos elaborados con los ingredientes más frescos. Si se te
+            antojan comidas auténticas y sabrosas o dulces deliciosos, pide
+            ahora y disfruta del sabor de la tradición entregado directamente en
+            tu puerta.
           </Text>
         </Container>
       </Box>
@@ -80,23 +81,22 @@ const Footer: React.FC = () => {
         <Box
           display={"flex"}
           gapY={[0, 2]}
-          fontSize={["10px", "10px", "10px", "12px"]}
+          fontSize={["sm", "10px", "10px", "12px"]}
           fontWeight={"light"}
           alignItems={["center", "center"]}
         >
           <Text>
             Copyright &copy; 2025 <b>Canel Restaurante.</b>
           </Text>
-        
         </Box>
 
         <Box display={"flex"} alignItems={"center"} gap={2}>
           <Text
             color={"#2D4D3A"}
-            fontSize={["10px", "10px", "10px", "12px"]}
+            fontSize={["sm", "10px", "10px", "12px"]}
             fontWeight={"bold"}
           >
-            Follow Us:
+            Síguenos:
           </Text>
           <Box display={"flex"} gap={2}>
             <Icon

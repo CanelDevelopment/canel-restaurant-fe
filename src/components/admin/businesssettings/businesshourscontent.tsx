@@ -19,7 +19,6 @@ import { useFetchSchedules } from "@/hooks/schedule/usefetchschedule";
 import { useFetchCurrentUser } from "@/hooks/user/usefetchuser";
 import { useFetchBranch } from "@/hooks/branch/usefetchbranch";
 
-// ✅ Correct order based on DB values (0 = Sunday, 1 = Monday...)
 const DAYS_OF_WEEK = [
   { label: "Monday", index: 1 },
   { label: "Tuesday", index: 2 },
@@ -59,8 +58,8 @@ export const BusinessHoursContent: React.FC = () => {
   const branchOptions = useMemo(() => {
     const items =
       branches?.map((branch) => ({
-        key: branch.id, // The unique ID for the item's value
-        textValue: branch.name, // The display name
+        key: branch.id,
+        textValue: branch.name,
         children: branch.name,
       })) || [];
 
@@ -89,7 +88,7 @@ export const BusinessHoursContent: React.FC = () => {
   if (user?.role.toLowerCase() === "manager" && !branchId)
     return (
       <Center p={20}>
-        <Text>No branch assigned to this manager.</Text>
+        <Text>No hay sucursal asignada a este gerente.</Text>
       </Center>
     );
 
@@ -97,8 +96,8 @@ export const BusinessHoursContent: React.FC = () => {
     <>
       <Box bgColor={"#fff"} py={10}>
         <BusinessHeader
-          title="Commercial Schedule"
-          description="Inform your customers that it is available for them"
+          title="Horario comercial"
+          description="Informe a sus clientes sobre su disponibilidad"
         />
 
         {user?.role.toLowerCase() === "admin" && (
@@ -109,7 +108,7 @@ export const BusinessHoursContent: React.FC = () => {
             mb={6}
           >
             <Text mb={2} fontWeight="bold">
-              Select Branch
+              Seleccionar Sucursal
             </Text>
             <Select.Root
               collection={branchOptions}
@@ -125,7 +124,7 @@ export const BusinessHoursContent: React.FC = () => {
                   <Select.ValueText placeholder="Select a branch">
                     {branchOptions.items.find(
                       (item) => item.key === selectedBranchId
-                    )?.textValue || "Select a branch"}
+                    )?.textValue || "Seleccionar rama"}
                   </Select.ValueText>
                   <Select.Indicator color={"#575757"} />
                 </Select.Trigger>
@@ -164,7 +163,6 @@ export const BusinessHoursContent: React.FC = () => {
                   const itemData = scheduleMap.get(index);
                   const isActive = itemData?.isActive || false;
                   const timeSlots = itemData?.timeSlots || [];
-                  // const _scheduleId = itemData?.id;
 
                   return (
                     <Flex
@@ -188,7 +186,7 @@ export const BusinessHoursContent: React.FC = () => {
                               } as any);
                             } else {
                               console.warn(
-                                `Cannot toggle: No schedule ID exists for ${label}.`
+                                `No se puede alternar: No existe ningún ID de programación para ${label}.`
                               );
                             }
                           }}
@@ -227,7 +225,9 @@ export const BusinessHoursContent: React.FC = () => {
           ) : (
             user?.role.toLowerCase() === "admin" && (
               <Center p={10}>
-                <Text>Please select a branch to view its schedule.</Text>
+                <Text>
+                  Por favor seleccione una sucursal para ver su horario.
+                </Text>
               </Center>
             )
           )}

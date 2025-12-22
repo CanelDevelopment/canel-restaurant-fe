@@ -6,6 +6,7 @@ import {
   Drawer,
   IconButton,
   Spinner,
+  Flex,
 } from "@chakra-ui/react";
 import { Cart } from "@/components/cart/cart";
 import { CustomCartIcon } from "../ui/cartIcon";
@@ -15,6 +16,7 @@ import { Online } from "@/provider/online";
 import { Offline } from "@/provider/offline";
 import { authClient } from "@/provider/user.provider";
 import { useFetchLogo } from "@/hooks/branding/usefetchbranding";
+import { useCartTotalQuantity } from "@/store/cartStore";
 
 export const CartNav: React.FC = () => {
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -36,6 +38,7 @@ export const CartNav: React.FC = () => {
   };
 
   const { data: logoData, isLoading: isLogoLoading } = useFetchLogo();
+  const totalQuantity = useCartTotalQuantity();
 
   return (
     <Drawer.Root initialFocusEl={() => triggerRef.current} size={["xs", "sm"]}>
@@ -63,30 +66,25 @@ export const CartNav: React.FC = () => {
           )}
         </Box>
 
-        <Box>
-          {/* Order button */}
+        <Flex alignItems={"center"} justifyContent={"center"}>
           <Button
+            onClick={() => navigate("/?change=true")}
+            // px={2.5}
+            // py={}
             mt={{ md: 8 }}
-            ml={6}
-            backgroundColor="black"
-            color="white"
-            fontSize={"16px"}
-            rounded={"lg"}
-            boxShadow={"0px 2px 5px rgba(255, 255, 255, 0.2)"}
+            fontSize={["10px", "16px"]}
+            fontWeight="light"
+            // height="auto"
+            rounded="lg"
+            bg="Cbutton"
+            color="#f4f4f4"
             fontFamily={"AmsiProCond"}
             letterSpacing={0.7}
-            onClick={() => {
-              navigate("/home#products");
-
-              setTimeout(() => {
-                const section = document.getElementById("products");
-                section?.scrollIntoView({ behavior: "smooth" });
-              }, 100);
-            }}
+            pb={1}
+            _hover={{ bg: "gray.200" }}
           >
-            Ordenar ahora
+            Cambiar Sucursal
           </Button>
-
           {/* Sign-out */}
           <Online>
             <Button
@@ -103,7 +101,7 @@ export const CartNav: React.FC = () => {
               letterSpacing={0.7}
               onClick={handleLogout}
             >
-              Sign Out
+              Cerrar sesión
             </Button>
           </Online>
 
@@ -124,11 +122,11 @@ export const CartNav: React.FC = () => {
                 letterSpacing={0.7}
                 w={"100px"}
               >
-                Login
+                Iniciar sesión
               </Button>
             </Link>
           </Offline>
-        </Box>
+        </Flex>
 
         <Drawer.Trigger
           as={IconButton}
@@ -140,12 +138,32 @@ export const CartNav: React.FC = () => {
           rounded={"full"}
           zIndex={1000}
           boxSize={6}
-          w={12}
-          h={12}
+          w={16}
+          h={16}
           bgColor={"Cbutton"}
-          boxShadow="0px 4px 12px rgba(0, 0, 0, 0.1)"
         >
-          <CustomCartIcon boxSize={[4, 6]} color="Cgreen" />
+          {totalQuantity > 0 && (
+            <Box
+              position="absolute"
+              top="-5px"
+              right="-5px"
+              bg="red.500"
+              color="white"
+              borderRadius="full"
+              fontSize="xs"
+              fontWeight="bold"
+              w={5}
+              h={5}
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+            >
+              {totalQuantity}
+            </Box>
+          )}
+          <Box position="relative">
+            <CustomCartIcon boxSize={[6, 8]} color="Cgreen" />
+          </Box>
         </Drawer.Trigger>
       </Box>
 

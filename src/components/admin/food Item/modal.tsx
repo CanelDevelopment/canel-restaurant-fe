@@ -4,11 +4,9 @@ import { Dialog } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { RxCross2 } from "react-icons/rx";
 import { TbPencilMinus } from "react-icons/tb";
-// --- (NEW) IMPORT THE MUTATION HOOK ---
 import { useAssignBranchToProduct } from "@/hooks/product/useassignbranch";
 
 interface BranchesModalProps {
-  // --- (CHANGE) PASS THE PRODUCT ID ---
   productId: string;
   initialSelectedIds?: string[];
 }
@@ -18,17 +16,12 @@ export function BranchesModal({
   initialSelectedIds = [],
 }: BranchesModalProps) {
   const { data: allBranches, isPending: isLoadingBranches } = useFetchBranch();
-  // --- (NEW) CALL THE MUTATION HOOK ---
   const { mutate: updateBranches, isPending: isUpdating } =
     useAssignBranchToProduct();
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
-  // --- (CHANGE) SYNC STATE WITH PROPS ---
-  // This ensures the modal reflects the correct state if reopened for the same product
   useEffect(() => {
-    // If initialSelectedIds is null or undefined, default to an empty array.
-    // This prevents the state from ever being set to null.
     setSelectedIds(initialSelectedIds || []);
   }, [initialSelectedIds]);
 
@@ -53,18 +46,12 @@ export function BranchesModal({
     }
   };
 
-  // console.log("This is", productId);
-  // console.log("This is the selected ids", selectedIds);
-
-  // --- (NEW) IMPLEMENT THE SAVE FUNCTION ---
   const handleSave = (closeModal: () => void) => {
-    // Extract the single ID from the array, or null if it's empty.
     const branchIdForApi = selectedIds[0] || null;
-
     updateBranches(
       {
         productId: productId,
-        branchId: branchIdForApi, // This is now correctly a string or null
+        branchId: branchIdForApi,
       },
       {
         onSuccess: () => {
@@ -78,7 +65,7 @@ export function BranchesModal({
     <Dialog.Root size={"md"} placement={"center"}>
       <Dialog.Trigger>
         <Button bgColor={"#4394D7"} color={"#fff"} rounded={"lg"} pb={1}>
-          All Branch <TbPencilMinus />
+           sucursales <TbPencilMinus />
         </Button>
       </Dialog.Trigger>
       <Dialog.Backdrop />
@@ -90,7 +77,6 @@ export function BranchesModal({
           border={"2px solid #DFDFDF"}
           position={"relative"}
         >
-          {/* This part remains the same */}
           <Dialog.CloseTrigger asChild>
             <Box
               as="button"
@@ -110,22 +96,20 @@ export function BranchesModal({
               <RxCross2 size={10} color="white" />
             </Box>
           </Dialog.CloseTrigger>
+
           <Dialog.Header bg="#DFF1ED" p={4} borderTopRadius="2xl">
             <Dialog.Title>
-              {" "}
               <Text
                 fontFamily={"AmsiProCond-Black"}
                 color={"Cbutton"}
                 fontSize="xl"
               >
-                {" "}
-                Branches{" "}
-              </Text>{" "}
+                Sucursales
+              </Text>
             </Dialog.Title>
           </Dialog.Header>
 
           <Dialog.Body>
-            {/* This section for checkboxes remains the same */}
             <Flex
               alignItems={"start"}
               justifyContent={"space-between"}
@@ -180,8 +164,7 @@ export function BranchesModal({
                         fontFamily={"AmsiProCond-Light"}
                         ml={2}
                       >
-                        {" "}
-                        Select All Branches{" "}
+                        Seleccionar  sucursales
                       </Checkbox.Label>
                     </Checkbox.Root>
                   </Box>
@@ -189,6 +172,7 @@ export function BranchesModal({
               )}
             </Flex>
           </Dialog.Body>
+
           <Dialog.Footer>
             <Button
               mt={6}
@@ -200,7 +184,7 @@ export function BranchesModal({
               onClick={() => handleSave(() => {})}
               disabled={isUpdating}
             >
-              Save
+              Guardar
             </Button>
           </Dialog.Footer>
         </Dialog.Content>

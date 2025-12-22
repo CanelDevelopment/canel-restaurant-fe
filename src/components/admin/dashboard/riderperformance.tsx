@@ -32,12 +32,11 @@ export const RiderPerformanceCard = () => {
     }
   }, [allRiders, selectedRiderId]);
 
-
   const {
     data: riderTips,
     isLoading: isRiderTipsLoading,
     isError: isRiderTipsError,
-  } = useFetchEarnedMoney(selectedRiderId)
+  } = useFetchEarnedMoney(selectedRiderId);
 
   const riderOptions = useMemo(() => {
     if (isAllRidersLoading || isAllRidersError || !allRiders)
@@ -65,14 +64,8 @@ export const RiderPerformanceCard = () => {
     );
   }
 
-  // const totalEarnings = riderTips?.totalTipAmount
-  //   ? parseFloat(riderTips.totalTipAmount).toFixed(2)
-  //   : "0.00";
-
-  const totalEarnings = riderTips?.totalEarned
-  const deliveredOrders = riderTips?.deliveredOrdersCount
-  
-  console.log(riderTips)
+  const totalEarnings = riderTips?.totalEarned;
+  const deliveredOrders = riderTips?.deliveredOrdersCount;
 
   return (
     <Card.Root borderRadius="lg" variant="outline" w={"full"}>
@@ -141,7 +134,7 @@ export const RiderPerformanceCard = () => {
               <VStack>
                 <Icon as={FaMoneyBillWave} boxSize={10} color="green.700" />
                 <Text fontSize="3xl" fontWeight="bold" lineHeight="1.2">
-                  REF. {" "} {totalEarnings}
+                  REF. {totalEarnings}
                 </Text>
                 <Text fontSize="sm" color="gray.500">
                   Ganancias por Viajes

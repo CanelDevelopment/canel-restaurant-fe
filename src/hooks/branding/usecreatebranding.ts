@@ -14,7 +14,7 @@ interface UpdateBrandingPayload {
   phoneNumber?: string;
   instagram?: string;
   facebook?: string;
-  mainSection?: string;
+  mainSection?: File;
 }
 
 export const useAddBranding = () => {
@@ -38,11 +38,13 @@ export const useAddBranding = () => {
     },
     mutationKey: ["create-branding"],
     onSuccess: (data) => {
-      toast.success("Branding updated successfully!");
+      toast.success("¡Branding actualizado con éxito!");
       console.log("Server response:", data.message);
     },
     onError: (error) => {
-      toast.error(error.response?.data.message || "Failed to update branding.");
+      toast.error(
+        error.response?.data.message || "Error al actualizar el branding."
+      );
       console.error("Failed to update branding:", error.message);
     },
   });

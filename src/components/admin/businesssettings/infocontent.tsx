@@ -36,7 +36,7 @@ export const InfoContent: React.FC = () => {
     if (phoneNumber) {
       const phoneRegex = /^\d{11}$/;
       if (!phoneRegex.test(phoneNumber)) {
-        toast.error("El número de teléfono debe tener exactamente 11 dígitos.");
+        toast.error("Phone number must be exactly 11 digits.");
         return;
       }
       payload.phoneNumber = phoneNumber;
@@ -46,7 +46,7 @@ export const InfoContent: React.FC = () => {
     if (email) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
-        toast.error("Ingrese un correo válido.");
+        toast.error("Enter a valid email.");
         return;
       }
       payload.email = email;
@@ -58,7 +58,7 @@ export const InfoContent: React.FC = () => {
         const url = new URL(instagram);
         payload.instagram = url.href;
       } catch {
-        toast.error("Ingrese un enlace válido de Instagram.");
+        toast.error("Enter a valid Instagram link.");
         return;
       }
     }
@@ -69,7 +69,7 @@ export const InfoContent: React.FC = () => {
         const url = new URL(facebook);
         payload.facebook = url.href;
       } catch {
-        toast.error("Ingrese un enlace válido de Facebook.");
+        toast.error("Enter a valid Facebook link.");
         return;
       }
     }
@@ -81,8 +81,9 @@ export const InfoContent: React.FC = () => {
     <Box bgColor={"#fff"} py={6}>
       <BusinessHeader
         title="Nombre e Información del Negocio"
-        description="Informe a los clientes sobre su negocio, liste su información de contacto y vincule sus cuentas de redes sociales."
+        description="Informa a los clientes sobre tu negocio, incluye tu información de contacto y enlaza tus cuentas de redes sociales."
       />
+
       <Box
         display={"flex"}
         flexDirection={["column", "column", "row"]}
@@ -93,12 +94,12 @@ export const InfoContent: React.FC = () => {
             {/* Business Name */}
             <Box display={"flex"} flexDirection={["column", "row"]}>
               <Text fontFamily={"AmsiProCond-Light"} color="#000" w={"300px"}>
-                Nom del Negocio
+                Nombre comercial
               </Text>
               <Input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Ingrese el nom de su negocio"
+                placeholder="Introduce el nombre de tu empresa"
                 size="lg"
                 borderColor="#EBEBEB"
                 bgColor={"#F4F4F4"}
@@ -112,12 +113,12 @@ export const InfoContent: React.FC = () => {
             {/* Business Phone Number */}
             <Box display={"flex"} flexDirection={["column", "row"]}>
               <Text fontFamily={"AmsiProCond-Light"} color="#000" w={"300px"}>
-                Teléfono del Negocio
+                Teléfono empresarial
               </Text>
               <Input
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
-                placeholder="Ingrese el número de teléfono"
+                placeholder="Ingrese al teléfono comercial"
                 size="lg"
                 borderColor="#EBEBEB"
                 bgColor={"#F4F4F4"}
@@ -131,12 +132,12 @@ export const InfoContent: React.FC = () => {
             {/* Business Email */}
             <Box display={"flex"} flexDirection={["column", "row"]}>
               <Text fontFamily={"AmsiProCond-Light"} color="#000" w={"300px"}>
-                Correo del Negocio
+                E-mail empresarial
               </Text>
               <Input
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Ingrese el correo del negocio"
+                placeholder="Ingrese el E-mail comercial"
                 size="lg"
                 borderColor="#EBEBEB"
                 bgColor={"#F4F4F4"}
@@ -229,7 +230,7 @@ export const InfoContent: React.FC = () => {
           fontSize={"lg"}
           onClick={handleUpdate}
         >
-          save
+          Ahorrar
         </Button>
       </Box>
     </Box>

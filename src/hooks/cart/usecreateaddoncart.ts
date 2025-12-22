@@ -23,14 +23,14 @@ export const useCreateAddonToCart = () => {
     mutationKey: ["create-addon-to-cart"],
 
     onSuccess: (data) => {
-      toast.success("Addon added successfully!");
+      toast.success("¡Complemento agregado con éxito!");
       console.log("Server response:", data.message);
 
       queryClient.invalidateQueries({ queryKey: ["fetch-cart"] });
     },
 
     onError: (error) => {
-      toast.error(error.response?.data.message || "Failed to add addon.");
+      toast.error(error.response?.data.message || "Error al agregar el complemento.");
       console.error("Failed to add addon:", error.message);
     },
   });

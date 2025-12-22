@@ -1,7 +1,11 @@
 import React from "react";
-import { Elevatedcard } from "@/components/Home/Elevatedcard";
-import { Box, Image, Container, SimpleGrid } from "@chakra-ui/react";
+import {
+  Elevatedcard,
+  type ProductVariant,
+} from "@/components/Home/Elevatedcard";
+import { Box, Container, SimpleGrid } from "@chakra-ui/react";
 import { IoCartOutline } from "react-icons/io5";
+import marble from "/Background/marble.jpeg";
 
 // Assuming your hook's 'Products' type looks like this.
 // It's better to move this to a central types file, e.g., src/types/product.ts
@@ -12,6 +16,9 @@ type Product = {
   price: number;
   image: string;
   discount: number;
+  addonItemIds: string[] | null;
+  // price: number;
+  variants: ProductVariant[] | null;
 };
 
 // Define the component's props
@@ -23,13 +30,15 @@ export const ProductSection: React.FC<ProductSectionProps> = ({ products }) => {
   return (
     <div id="products">
       <Box
-        bgImage={`linear-gradient(to bottom, rgba(255, 255, 255, 0.7), rgba(255,255,255,0.7)), url('/Background/grunge.png')`}
+        // bgImage={`linear-gradient(to bottom, rgba(255, 255, 255, 0.7), rgba(255,255,255,0.7)), url('/Background/Marble.jpeg')`}
+        bg={`url(${marble})`}
         bgPos="center"
         bgSize="cover"
+        objectFit={"cover"}
         position="relative"
       >
         {/* DESIGN ELEMENTS (Unchanged) */}
-        <Box position="absolute" bottom={6} left={16} zIndex={0}>
+        {/* <Box position="absolute" bottom={6} left={16} zIndex={0}>
           <Image
             loading="lazy"
             src="/Background/designElement3.png"
@@ -45,8 +54,8 @@ export const ProductSection: React.FC<ProductSectionProps> = ({ products }) => {
           top={32}
           left={-6}
           zIndex={0}
-        />
-        <Box position="absolute" top={96} right={8} zIndex={0}>
+        /> */}
+        {/* <Box position="absolute" top={96} right={8} zIndex={0}>
           <Image
             loading="lazy"
             src="/Background/designElement-heart3.png"
@@ -54,14 +63,20 @@ export const ProductSection: React.FC<ProductSectionProps> = ({ products }) => {
             rotate={"65"}
           />
         </Box>
-        <Box position="absolute" bottom={96} left={8} zIndex={0}>
+        <Box
+          opacity={[0.3, 1]}
+          position="absolute"
+          bottom={96}
+          left={8}
+          zIndex={0}
+        >
           <Image
             loading="lazy"
             src="/Background/designElement2.png"
             w={"34px"}
             rotate={"-32"}
           />
-        </Box>
+        </Box> */}
 
         <Container maxW={"container"}>
           <SimpleGrid
@@ -83,7 +98,9 @@ export const ProductSection: React.FC<ProductSectionProps> = ({ products }) => {
                 icon={<IoCartOutline size={30} />}
                 discount={product.discount}
                 description={product.description}
+                addonItemIds={product.addonItemIds}
                 // itemW={["70px", "auto"]}
+                variants={product.variants}
               />
             ))}
           </SimpleGrid>

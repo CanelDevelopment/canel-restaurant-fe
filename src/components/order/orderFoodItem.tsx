@@ -7,6 +7,11 @@ interface OrderFoodItemProps {
     productName: string;
     quantity: number;
     price: string | number;
+    product: {
+      id: string;
+      name: string;
+      price: string;
+    };
     orderAddons?: {
       quantity: number;
       addonItem: {
@@ -19,7 +24,7 @@ interface OrderFoodItemProps {
 }
 
 export const OrderFoodItem: React.FC<OrderFoodItemProps> = ({ items }) => {
-  console.log("items", items);
+  console.log(items);
   return (
     <Box mt={5}>
       {/* Header */}
@@ -71,7 +76,7 @@ export const OrderFoodItem: React.FC<OrderFoodItemProps> = ({ items }) => {
                   {item.quantity}
                 </Text>
                 <Text width="20%" textAlign="right">
-                  {item.price}
+                  {item.product.price}
                 </Text>
               </Flex>
 

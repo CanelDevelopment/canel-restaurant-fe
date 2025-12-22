@@ -10,6 +10,8 @@ interface AddToCartPayload {
   productId: string;
   quantity: number;
   notes: string;
+  variantName?: string;
+  variantPrice?: number;
 }
 
 export const useAddCart = () => {
@@ -21,7 +23,7 @@ export const useAddCart = () => {
     },
     mutationKey: ["add-cart"],
     onSuccess: (data) => {
-      toast.success("Item added to cart!");
+      toast.success("¡Artículo agregado al carrito!");
       console.log("Server response:", data.message);
       // onSuccessCallback(data.cartItemId);
 
@@ -29,7 +31,8 @@ export const useAddCart = () => {
     },
     onError: (error) => {
       toast.error(
-        error.response?.data.message || "Failed to add item to cart."
+        error.response?.data.message ||
+          "Error al agregar el artículo al carrito."
       );
       console.error("Failed to add item:", error.message);
     },

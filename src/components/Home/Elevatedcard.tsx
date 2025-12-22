@@ -5,6 +5,12 @@ import React, { useState } from "react";
 import { useCartStore } from "@/store/cartStore";
 import { useAddCart } from "@/hooks/cart/useaddcart";
 import { authClient } from "@/provider/user.provider";
+import type { VolumeDiscountRules } from "@/store/calculationStore";
+
+export interface ProductVariant {
+  name: string;
+  price: string;
+}
 
 export type ElevatedCardProps = {
   description?: string;
@@ -15,7 +21,10 @@ export type ElevatedCardProps = {
   buttontext?: string;
   id: string;
   discount: number;
-  // itemW?: string | string[];
+  addonItemIds: string[] | null;
+  volumeDiscountRules: VolumeDiscountRules | null;
+  variants: ProductVariant[] | null;
+  categoryId: string;
 };
 
 export const Elevatedcard: React.FC<ElevatedCardProps> = ({
@@ -25,14 +34,18 @@ export const Elevatedcard: React.FC<ElevatedCardProps> = ({
   price,
   buttontext,
   discount,
-  // itemW,
+  addonItemIds,
   id,
+  variants,
+  volumeDiscountRules,
+  categoryId,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const addToCart = useCartStore((state) => state.actions.addToCart);
+  const addToCart = useCartStore((state) => state.addToCart);
   const { mutate: addCartMutation } = useAddCart();
   const session = authClient.useSession();
 
+  // The state for the modal now includes variants
   const [selectedProduct, setSelectedProduct] = useState({
     title: "",
     price: "",
@@ -52,24 +65,42 @@ export const Elevatedcard: React.FC<ElevatedCardProps> = ({
     setIsOpen(true);
   };
 
-  const handleAddToCart = (quantity: number, notes: string) => {
+  const handleAddToCart = (
+    quantity: number,
+    notes: string,
+    selectedVariant: ProductVariant | null
+  ) => {
+    const isVariant = selectedVariant !== null;
+
+    const finalPrice = selectedVariant
+      ? parseFloat(selectedVariant.price)
+      : parseFloat(price.replace(/[^0-9.]/g, ""));
+
+    const finalName = selectedVariant
+      ? `${title} (${selectedVariant.name})`
+      : title;
+
+    const finalId = selectedVariant ? `${id}-${selectedVariant.name}` : id;
+    addToCart({
+      id: finalId,
+      name: finalName,
+      price: finalPrice,
+      image: imageSource,
+      discount,
+      quantity: Number(quantity),
+      addonItemIds,
+      isVariant, // Variable exists now
+      volumeDiscountRules, // Variable exists now
+      categoryId,
+    });
+
     const payload = {
       productId: id,
       quantity: quantity,
       notes: notes,
+      variantName: selectedVariant?.name ?? undefined,
+      variantPrice: Number(selectedVariant?.price ?? null),
     };
-
-    const numericPrice = parseFloat(price.replace(/[^0-9.]/g, "")) || 0;
-
-    addToCart({
-      id,
-      name: title,
-      price: numericPrice,
-      image: imageSource,
-      discount,
-      quantity: Number(quantity),
-    });
-
     if (session.data?.session.userId) {
       addCartMutation(payload);
     }
@@ -85,11 +116,9 @@ export const Elevatedcard: React.FC<ElevatedCardProps> = ({
           left="50%"
           transform="translateX(-50%)"
           zIndex={99}
-          // width={itemW || ["100px", "200px"]}
           width={["120px", "160px"]}
           height={["120px", "160px"]}
           minW={"120px"}
-          // bg={"white"}
         >
           <Image
             loading="lazy"
@@ -123,7 +152,7 @@ export const Elevatedcard: React.FC<ElevatedCardProps> = ({
               <Stack align="center" spaceY={[0.5, 2]}>
                 <Card.Title
                   color="#24412E"
-                  fontSize={["xs", "lg"]}
+                  fontSize={["md", "lg"]}
                   fontFamily={"AmsiProCond"}
                   textAlign={"center"}
                   lineHeight={["1.2", "1.5"]}
@@ -133,7 +162,7 @@ export const Elevatedcard: React.FC<ElevatedCardProps> = ({
 
                 <Card.Title
                   color="Cbutton"
-                  fontSize={["14px", "2xl"]}
+                  fontSize={["md", "2xl"]}
                   fontFamily={"AmsiProCond-Bold"}
                 >
                   REF {price}
@@ -145,8 +174,8 @@ export const Elevatedcard: React.FC<ElevatedCardProps> = ({
                   borderRadius="lg"
                   width="100%"
                   onClick={openModal}
-                  fontSize={["10px", "lg"]}
-                  size={["xs", "md"]}
+                  fontSize={["md", "lg"]}
+                  size={["sm", "md"]}
                   fontFamily={"AmsiProCond"}
                 >
                   <BsCart3 />
@@ -167,6 +196,7 @@ export const Elevatedcard: React.FC<ElevatedCardProps> = ({
         image={selectedProduct.image}
         description={selectedProduct.description}
         onAddToCart={handleAddToCart}
+        variants={variants}
       />
     </Stack>
   );

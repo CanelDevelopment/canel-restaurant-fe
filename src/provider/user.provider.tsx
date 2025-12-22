@@ -14,6 +14,7 @@ import {
 } from "better-auth/client/plugins";
 import { backendDomain } from "@/configs/axios.config";
 import * as permissions from "@/lib/permission";
+import { useSyncCart } from "@/hooks/cart/usesynccart";
 
 const { ac, statement, ...roles } = permissions;
 
@@ -26,8 +27,8 @@ export const authClient = createAuthClient({
   fetchOptions: {
     auth: {
       type: "Bearer",
-      token: () => localStorage.getItem("bearer_token") || ""
-    }
+      token: () => localStorage.getItem("bearer_token") || "",
+    },
   },
   baseURL: backendDomain.development,
 });
@@ -84,6 +85,8 @@ export const UserProvider: FC<BeterAuthProviderProps> = ({
       }
     }
   }, [authData, isPending, error, onError, refetchOnError]);
+
+  useSyncCart();
 
   return (
     <UserAuthContext.Provider

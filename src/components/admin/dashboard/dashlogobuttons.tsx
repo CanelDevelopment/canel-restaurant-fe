@@ -31,12 +31,14 @@ export const DashLogoButtons = () => {
       navigate("/admin-signin");
     } catch (error) {
       console.error("Sign-out error:", error);
-      toast.error("Something went wrong while signing out. Please try again.");
+      toast.error(
+        "Algo salió mal al cerrar sesión. Por favor, inténtalo de nuevo."
+      );
     }
   }
 
   // const { data: user, isLoading } = useFetchCurrentUser();
-  const {data: user, isPending: isLoading} = authClient.useSession()  
+  const { data: user, isPending: isLoading } = authClient.useSession();
 
   return (
     <Center
@@ -78,18 +80,18 @@ export const DashLogoButtons = () => {
             >
               <Icon as={FaUser} w={3} h={3} />
               {isLoading ? (
-                // Show a skeleton loader while fetching user data
+                // Mostrar un esqueleto de carga mientras se obtiene la información del usuario
                 <Skeleton height="20px" width="70px" />
               ) : (
-                <Text pb={1}>{user ? user.user.name : "Guest"}</Text>
-              )} 
+                <Text pb={1}>{user ? user.user.name : "Invitado"}</Text>
+              )}
               <Icon pb={1} as={FaSortDown} w={4} h={4} />
             </Button>
           </MenuTrigger>
           <MenuPositioner>
             <MenuContent>
               <Menu.Item value="signout" onClick={handleSignOut}>
-                Sign Out
+                Cerrar Sesión
               </Menu.Item>
             </MenuContent>
           </MenuPositioner>

@@ -88,14 +88,14 @@ export const EditStaffModal = ({
             roundedTop={"2xl"}
             pb={5}
           >
-            Edit Staff Member
+            Editar Miembro del Personal
           </Dialog.Header>
           <Dialog.CloseTrigger />
           <Dialog.Body mt={4} px={6}>
             <Grid templateColumns="repeat(2, 1fr)" gap={4}>
               <GridItem colSpan={2}>
                 <Text mb={2} fontSize={"md"}>
-                  Full Name
+                  Nombre Completo
                 </Text>
                 <Input
                   value={fullName}
@@ -105,7 +105,7 @@ export const EditStaffModal = ({
 
               <GridItem>
                 <Text mb={2} fontSize={"md"}>
-                  Role
+                  Rol
                 </Text>
                 <Select.Root
                   collection={roleCollection}
@@ -116,7 +116,7 @@ export const EditStaffModal = ({
                 >
                   <Select.Control>
                     <Select.Trigger>
-                      <Select.ValueText placeholder="Select a role" />
+                      <Select.ValueText placeholder="Seleccionar un rol" />
                     </Select.Trigger>
                   </Select.Control>
                   <Portal>
@@ -135,7 +135,7 @@ export const EditStaffModal = ({
 
               <GridItem>
                 <Text mb={2} fontSize={"md"}>
-                  Status
+                  Estado
                 </Text>
                 <Select.Root
                   collection={statusCollection}
@@ -146,7 +146,7 @@ export const EditStaffModal = ({
                 >
                   <Select.Control>
                     <Select.Trigger>
-                      <Select.ValueText placeholder="Select a status" />
+                      <Select.ValueText placeholder="Seleccionar un estado" />
                     </Select.Trigger>
                   </Select.Control>
                   <Portal>
@@ -166,7 +166,7 @@ export const EditStaffModal = ({
           </Dialog.Body>
           <Dialog.Footer p={6}>
             <Button variant="ghost" mr={3} onClick={onClose}>
-              Cancel
+              Cancelar
             </Button>
             <Button
               bgColor={"Cgreen"}
@@ -174,7 +174,7 @@ export const EditStaffModal = ({
               onClick={handleSaveChanges}
               disabled={isPending}
             >
-              {isPending ? "Saving..." : "Save Changes"}
+              {isPending ? "Guardando..." : "Guardar Cambios"}
             </Button>
           </Dialog.Footer>
         </Dialog.Content>

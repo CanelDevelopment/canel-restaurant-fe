@@ -15,9 +15,9 @@ export const BusinessPasswordContent = () => {
   const { register, handleSubmit } = useForm<ResetPassword>();
 
   async function handleResetPassword(values: ResetPassword) {
-    console.log("Hello");
+    console.log("Hola");
     if (values.confirmNewPassword !== values.newPassword)
-      return toast.error("passwords don't match");
+      return toast.error("Las contraseñas no coinciden");
 
     await authClient.changePassword(
       {
@@ -26,10 +26,10 @@ export const BusinessPasswordContent = () => {
       },
       {
         onSuccess() {
-          toast.success("Password has been changed successsfully");
+          toast.success("La contraseña se ha cambiado correctamente");
         },
         onError: (error) => {
-          toast.error(error.error.message || "Something went wrong");
+          toast.error(error.error.message || "Algo salió mal");
         },
       }
     );
@@ -40,7 +40,7 @@ export const BusinessPasswordContent = () => {
       <Box bg={"#fff"} py={10}>
         <BusinessHeader
           title="Contraseña y Seguridad"
-          description="Gestione su contraseña, preferencias de inicio de sesión y métodos de recuperación."
+          description="Administre su contraseña, preferencias de inicio de sesión y métodos de recuperación."
         />
 
         <Box width={["100%", "100%", "100%", "50%"]} px={[3, 5, 10]} py={4}>
@@ -58,10 +58,10 @@ export const BusinessPasswordContent = () => {
                   mb={1}
                   minW={"180px"}
                 >
-                  Mot de Passe actuel
+                  Contraseña Actual
                 </Text>
                 <PasswordInput
-                  placeholder="mot de passe actuel"
+                  placeholder="Contraseña actual"
                   type="password"
                   size="lg"
                   borderColor="#EBEBEB"
@@ -87,7 +87,7 @@ export const BusinessPasswordContent = () => {
                   mb={1}
                   minW={"180px"}
                 >
-                  Nouveau mot de passe
+                  Nueva Contraseña
                 </Text>
                 <PasswordInput
                   placeholder="Ingrese su nueva contraseña"
@@ -116,10 +116,10 @@ export const BusinessPasswordContent = () => {
                   mb={1}
                   minW={"180px"}
                 >
-                  Confirmez le mot de passe
+                  Confirmar Nueva Contraseña
                 </Text>
                 <PasswordInput
-                  placeholder="Confirmez le mot de passe"
+                  placeholder="Confirme su nueva contraseña"
                   type="password"
                   size="lg"
                   borderColor="#EBEBEB"

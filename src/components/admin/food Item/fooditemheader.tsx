@@ -4,15 +4,19 @@ import { DashboardHeading } from "../dashboard/dashboardHeading";
 import { DynamicTable } from "../table/dynamictable";
 import { CustomeSwitch } from "./customeswitch";
 import { BranchesModal } from "./modal";
-import { useFetchProducts } from "@/hooks/product/usefetchproducts";
-import { useState, type JSX } from "react";
+import {
+  useFetchProducts,
+  type Products,
+} from "@/hooks/product/usefetchproducts";
+import { useEffect, useMemo, useState, type JSX } from "react";
 import { FoodHeader } from "../foodcategory/foodheader";
 import { useUpdateProduct } from "@/hooks/product/useupdateproduct";
 import { Tooltip } from "@/components/ui/tooltip";
 import { EditProductModal } from "./editfoodmodal";
 import { useDeleteProduct } from "@/hooks/product/usedeleteproduct";
+import type { ProductVariant } from "./newitemcontent";
 
-interface MenuItem {
+export interface MenuItem {
   id: string;
   name: JSX.Element;
   description: string;
@@ -31,21 +35,35 @@ interface ProductDataForModal {
   description: string;
   price: string;
   photo: string;
+  discount: string;
   categoryId: string | null;
+  variants: ProductVariant[];
 }
 
 export const FoodItemHeader = () => {
   const { data: products, isLoading, isError } = useFetchProducts();
   const { mutate: updateProduct } = useUpdateProduct();
+  const { mutate: deleteProduct } = useDeleteProduct(); // Moved up for cleaner access
 
   const [updatingProductId, setUpdatingProductId] = useState<string | null>(
     null
   );
-
   const [isEditModalOpen, setEditModalOpen] = useState(false);
-
   const [selectedProduct, setSelectedProduct] =
     useState<ProductDataForModal | null>(null);
+
+  const [visibleCount, setVisibleCount] = useState(5);
+  const [_displayedData, setDisplayedData] = useState<Products[]>([]);
+
+  // 1. SIMPLIFY TABLE DATA
+  // Only return raw data here. Do not return JSX.
+  const tableData = useMemo(() => {
+    return products?.slice(0, visibleCount) || [];
+  }, [products, visibleCount]);
+
+  const loadMore = () => {
+    setVisibleCount((prev) => prev + 10);
+  };
 
   const handleOpenEditModal = (product: ProductDataForModal) => {
     setSelectedProduct(product);
@@ -68,6 +86,7 @@ export const FoodItemHeader = () => {
     );
   };
 
+  // 2. DEFINE UI IN COLUMNS
   const columns = [
     {
       id: "select",
@@ -111,7 +130,44 @@ export const FoodItemHeader = () => {
           Nombre
         </Box>
       ),
-      cell: ({ row }: { row: any }) => <Box>{row.getValue("name")}</Box>,
+      // MOVED JSX HERE
+      cell: ({ row }: { row: any }) => {
+        const product = row.original;
+        return (
+          <Box className="flex flex-col gap-1 group">
+            {product.name}
+            <Box className="flex gap-2 text-sm invisible group-hover:visible transition-all duration-200">
+              <Text
+                textDecoration={"underline"}
+                color={"#4394D7"}
+                cursor={"pointer"}
+                onClick={() =>
+                  handleOpenEditModal({
+                    id: product.id,
+                    name: product.name,
+                    description: product.description,
+                    price: `Ref ${product.price}`,
+                    photo: product.image,
+                    categoryId: product.category?.id || null,
+                    variants: product.variants,
+                    discount: product.discount,
+                  })
+                }
+              >
+                Editar
+              </Text>
+              <Text
+                textDecoration={"underline"}
+                color={"#FF5E5E"}
+                cursor={"pointer"}
+                onClick={() => deleteProduct({ id: product.id })}
+              >
+                Eliminar
+              </Text>
+            </Box>
+          </Box>
+        );
+      },
     },
     {
       accessorKey: "description",
@@ -131,17 +187,28 @@ export const FoodItemHeader = () => {
     {
       accessorKey: "category",
       header: "Categorías",
-      cell: ({ row }: { row: any }) => row.getValue("category"),
+      cell: ({ row }: { row: any }) =>
+        row.original.category?.name ?? "Sin Categoría",
     },
     {
       accessorKey: "price",
       header: "Precio",
-      cell: ({ row }: { row: any }) => row.getValue("price"),
+      cell: ({ row }: { row: any }) => `Ref ${row.original.price}`,
     },
     {
-      accessorKey: "photo",
+      accessorKey: "photo", // Note: accessorKey doesn't matter much if using cell render
       header: "Foto",
-      cell: ({ row }: { row: any }) => row.getValue("photo"),
+      // MOVED JSX HERE
+      cell: ({ row }: { row: any }) => (
+        <Box boxSize={20}>
+          <Image
+            loading="lazy"
+            src={`${row.original.image}`}
+            alt={row.original.name}
+            borderRadius="md"
+          />
+        </Box>
+      ),
     },
     {
       accessorKey: "itemNotAvailable",
@@ -151,9 +218,9 @@ export const FoodItemHeader = () => {
         </Box>
       ),
       cell: ({ row }: { row: any }) => (
-        <Box w={"200px"} textAlign={"center"}>
+        <Box w={"200px"} textAlign={"center"} position={"relative"} zIndex={0}>
           <CustomeSwitch
-            isChecked={row.original.itemNotAvailable}
+            isChecked={row.original.availability}
             onChange={(newVisibility) =>
               handleVisibilityToggle(row.original.id, newVisibility)
             }
@@ -165,15 +232,20 @@ export const FoodItemHeader = () => {
     {
       accessorKey: "branch",
       header: "Disponibilidad",
-      cell: ({ row }: { row: any }) => row.getValue("branch"),
+      // MOVED JSX HERE
+      cell: ({ row }: { row: any }) => (
+        <BranchesModal
+          productId={row.original.id}
+          initialSelectedIds={row.original.branchId}
+        />
+      ),
     },
     {
       accessorKey: "date",
       header: "Fecha",
       cell: ({ row }: { row: any }) => (
         <Box w={"200px"}>
-          {" "}
-          {new Date(row.original.date).toLocaleDateString("fr-FR", {
+          {new Date(row.original.createdAt).toLocaleDateString("fr-FR", {
             day: "2-digit",
             month: "2-digit",
             year: "numeric",
@@ -185,67 +257,9 @@ export const FoodItemHeader = () => {
     },
   ];
 
-  const { mutate } = useDeleteProduct();
-
-  const tableData: MenuItem[] =
-    products?.map((product) => ({
-      // `product` here is the raw data from your API
-      id: product.id,
-      name: (
-        <Box className="flex flex-col gap-1 group">
-          {product.name}
-          <Box className="flex gap-2 text-sm invisible group-hover:visible transition-all duration-200">
-            <Text
-              textDecoration={"underline"}
-              color={"#4394D7"}
-              cursor={"pointer"}
-              onClick={() =>
-                handleOpenEditModal({
-                  id: product.id,
-                  name: product.name,
-                  description: product.description,
-                  price: `Ref ${product.price}`,
-                  photo: product.image,
-                  categoryId: product.category?.id || null,
-                })
-              }
-            >
-              Editar
-            </Text>
-            <Text
-              textDecoration={"underline"}
-              color={"#FF5E5E"}
-              cursor={"pointer"}
-              onClick={() => mutate({ id: product.id })}
-            >
-              Eliminar
-            </Text>
-          </Box>
-        </Box>
-      ),
-      description: product.description,
-      category: product.category?.name ?? "Sin Categoría",
-      price: `Ref ${product.price}`,
-      photo: (
-        <Box boxSize={20}>
-          <Image
-            loading="lazy"
-            src={`${product.image}`}
-            alt={product.name}
-            borderRadius="md"
-          />
-        </Box>
-      ),
-      itemNotAvailable: product.availability,
-      branch: (
-        <BranchesModal
-          productId={product.id}
-          initialSelectedIds={product.branchId}
-        />
-      ),
-      date: product.createdAt,
-      status: product.status,
-    })) || [];
+  useEffect(() => {
+    if (products) setDisplayedData(products.slice(0, visibleCount));
+  }, [products, visibleCount]);
 
   return (
     <Box bg={"white"}>
@@ -253,7 +267,11 @@ export const FoodItemHeader = () => {
       <DashboardHeading title="ARTÍCULO DE COMIDA" />
 
       <Box px={[0, 0, 8]} pb={3} rounded={"none"} bg={"#f3f3f3"}>
-        <FoodHeader link="/dashboard/add_new_item" showImportButton={true} />
+        <FoodHeader
+          link="/dashboard/add_new_item"
+          showImportButton={true}
+          showProductModal={true}
+        />
 
         {isError ? (
           <Center h="400px" bg="white">
@@ -266,6 +284,8 @@ export const FoodItemHeader = () => {
             columns={columns}
             data={tableData}
             isLoading={isLoading}
+            onLoadMore={loadMore}
+            hasMore={visibleCount < (products?.length || 0)}
           />
         )}
       </Box>

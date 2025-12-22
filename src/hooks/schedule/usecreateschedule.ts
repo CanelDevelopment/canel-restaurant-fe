@@ -6,7 +6,6 @@ import {
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 
-// Define the expected shape of your schedule data
 interface ScheduleFormData {
   branchId: string;
   dayOfWeek: number;
@@ -27,11 +26,11 @@ export const useAddSchedule = () => {
     mutationKey: ["create schedule"],
     retry: false,
     onSuccess() {
-      toast.success("Schedule created successfully!");
+      toast.success("¡Horario creado con éxito!");
       queryClient.invalidateQueries({ queryKey: ["schedules"] });
     },
     onError() {
-      toast.error("Failed to create schedule.");
+      toast.error("Error al crear el horario.");
     },
   });
 };

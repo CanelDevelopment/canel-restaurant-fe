@@ -71,7 +71,6 @@ export const AssignOrderModal: React.FC<AssignOrderModalProps> = ({
       { orderId: order.id, riderId: selectedRiderId[0] },
       {
         onSuccess: () => {
-          toast.success("¡Repartidor asignado!");
           onClose();
         },
       }
@@ -213,7 +212,7 @@ export const AssignOrderModal: React.FC<AssignOrderModalProps> = ({
                         fontFamily="AmsiProCond"
                         color="Cbutton"
                       >
-                        Nom del Cliente:
+                        Nombre:
                       </Text>
                       <Text
                         fontSize="sm"
@@ -275,7 +274,7 @@ export const AssignOrderModal: React.FC<AssignOrderModalProps> = ({
                     fontFamily="AmsiProCond-Black"
                     color="Cbutton"
                   >
-                    <Text>Montant à percevoir</Text>
+                    <Text>Total</Text>
                     <Text>Ref {totalPrice.toFixed(2)}</Text>
                   </Flex>
                 </Stack>

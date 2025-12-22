@@ -45,7 +45,6 @@ const AdvancedSearchModal = ({ onSearch }: AdvancedSearchModalProps) => {
     setIsOpen(false);
   };
 
-  // A helper component for each radio item to ensure icon visibility
   const RadioItem = ({
     value,
     children,
@@ -57,12 +56,12 @@ const AdvancedSearchModal = ({ onSearch }: AdvancedSearchModalProps) => {
       value={value}
       fontFamily={"AmsiProCond"}
       fontSize={"sm"}
-      display="flex" // This is the key fix for the missing icon
+      display="flex"
       alignItems="center"
       w="max-content"
     >
       <RadioGroup.ItemHiddenInput />
-      <RadioGroup.ItemIndicator mr={2} /> {/* Added margin for spacing */}
+      <RadioGroup.ItemIndicator mr={2} />
       <RadioGroup.ItemText>{children}</RadioGroup.ItemText>
     </RadioGroup.Item>
   );
@@ -137,10 +136,9 @@ const AdvancedSearchModal = ({ onSearch }: AdvancedSearchModalProps) => {
             </Dialog.Title>
           </Dialog.Header>
 
-          {/* This is the completely new, stylized layout */}
           <Dialog.Body px={0} mt={12}>
             <VStack align="start">
-              {/* Amount Spend Section */}
+              {/* Monto Gastado */}
               <Box w="full">
                 <Text fontFamily={"AmsiProCond-Black"} fontSize="lg" mb={2}>
                   Monto Gastado
@@ -153,15 +151,15 @@ const AdvancedSearchModal = ({ onSearch }: AdvancedSearchModalProps) => {
                     }
                   >
                     <VStack align="start">
-                      <RadioItem value="more">
-                        More than this quantity
+                      <RadioItem value="more">Más que esta cantidad</RadioItem>
+                      <RadioItem value="exact">Cantidad exacta</RadioItem>
+                      <RadioItem value="less">
+                        Menos que esta cantidad
                       </RadioItem>
-                      <RadioItem value="exact">This exact quantity</RadioItem>
-                      <RadioItem value="less">Less than this amount</RadioItem>
                     </VStack>
                   </RadioGroup.Root>
                   <Input
-                    placeholder="Introduce the import"
+                    placeholder="Introduce el importe"
                     value={searchCriteria.amountSpendValue}
                     onChange={(e) =>
                       handleInputChange("amountSpendValue", e.target.value)
@@ -174,10 +172,10 @@ const AdvancedSearchModal = ({ onSearch }: AdvancedSearchModalProps) => {
                 </HStack>
               </Box>
 
-              {/* Number of Orders Section */}
+              {/* Número de Pedidos */}
               <Box w="full">
                 <Text fontFamily={"AmsiProCond-Black"} fontSize="lg" mb={2}>
-                  Order number
+                  Número de Pedidos
                 </Text>
                 <HStack align="center" justify="space-between" w="full">
                   <RadioGroup.Root
@@ -187,13 +185,13 @@ const AdvancedSearchModal = ({ onSearch }: AdvancedSearchModalProps) => {
                     }
                   >
                     <VStack align="start">
-                      <RadioItem value="more">More of this number</RadioItem>
-                      <RadioItem value="exact">This exact number</RadioItem>
-                      <RadioItem value="less">Less than this number</RadioItem>
+                      <RadioItem value="more">Más que este número</RadioItem>
+                      <RadioItem value="exact">Número exacto</RadioItem>
+                      <RadioItem value="less">Menos que este número</RadioItem>
                     </VStack>
                   </RadioGroup.Root>
                   <Input
-                    placeholder="Enter the number"
+                    placeholder="Introduce el número"
                     value={searchCriteria.numOrdersValue}
                     onChange={(e) =>
                       handleInputChange("numOrdersValue", e.target.value)
@@ -206,10 +204,10 @@ const AdvancedSearchModal = ({ onSearch }: AdvancedSearchModalProps) => {
                 </HStack>
               </Box>
 
-              {/* Blacklist Filter Section */}
+              {/* Lista Negra */}
               <Box w="full">
                 <Text fontFamily={"AmsiProCond-Black"} fontSize="lg" mb={2}>
-                  State of the black list
+                  Estado de la Lista Negra
                 </Text>
                 <RadioGroup.Root
                   value={searchCriteria.blacklistStatus}
@@ -218,11 +216,13 @@ const AdvancedSearchModal = ({ onSearch }: AdvancedSearchModalProps) => {
                   }
                 >
                   <HStack>
-                    <RadioItem value="all">All users</RadioItem>
+                    <RadioItem value="all">Todos los usuarios</RadioItem>
                     <RadioItem value="blacklisted">
-                      Solo in black list
+                      Solo en lista negra
                     </RadioItem>
-                    <RadioItem value="not_blacklisted">No black list</RadioItem>
+                    <RadioItem value="not_blacklisted">
+                      No en lista negra
+                    </RadioItem>
                   </HStack>
                 </RadioGroup.Root>
               </Box>
@@ -237,7 +237,7 @@ const AdvancedSearchModal = ({ onSearch }: AdvancedSearchModalProps) => {
               fontSize="lg"
               py={6}
             >
-              Search
+              Buscar
             </Button>
           </Dialog.Body>
         </Dialog.Content>

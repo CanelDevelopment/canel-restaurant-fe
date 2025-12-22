@@ -2,14 +2,16 @@ import React, { useEffect, useMemo, useState } from "react";
 import Footer from "@/components/footer/Footer";
 import { Headingsolid } from "@/components/Home/Headingsolid";
 import { Heronav } from "@/components/Home/Heronav";
-import Homenav from "@/components/Home/Homenav";
+// import Homenav from "@/components/Home/Homenav";
 import { HeroSection } from "@/components/Home/HeroSection";
 import { HomeFavorites } from "@/components/Home/HomeFavorites";
 import { Center, Spinner, Text, Box } from "@chakra-ui/react";
 import { ProductSection } from "@/components/Home/productsection";
 import { useFetchMenu } from "@/hooks/product/usefetchmenu";
-import SearchBar from "@/components/Home/SearchBar"; // <-- Import SearchBar
+import SearchBar from "@/components/Home/SearchBar";
 import { authClient } from "@/provider/user.provider";
+import type { ProductVariant } from "@/components/Home/Elevatedcard";
+import marble from "/Background/marble.jpeg";
 
 // Define types for better readability
 type Product = {
@@ -20,6 +22,8 @@ type Product = {
   image: string;
   discount: number;
   branchId: string | null;
+  addonItemIds: string[] | null;
+  variants: ProductVariant[] | null;
 };
 
 interface Category {
@@ -31,6 +35,8 @@ interface Category {
 const Home: React.FC = () => {
   const { data: originalCategories, isLoading, error } = useFetchMenu();
   const [searchQuery, setSearchQuery] = useState("");
+
+  // const {session} = await authClient.getSession()
 
   const filteredCategories = useMemo(() => {
     if (!originalCategories) return [];
@@ -83,6 +89,13 @@ const Home: React.FC = () => {
             product.branchId === selectedBranchId || product.branchId === null
         );
 
+        const filteredProductsWithCategory = filteredProductsByBranch.map(
+          (product) => ({
+            ...product,
+            categoryId: category.id,
+          })
+        );
+
         if (filteredProductsByBranch.length > 0) {
           return (
             <Box
@@ -90,7 +103,7 @@ const Home: React.FC = () => {
               id={category.name.replace(/\s+/g, "-").toLowerCase()}
             >
               <Headingsolid title={category.name.toUpperCase()} />
-              <ProductSection products={filteredProductsByBranch} />
+              <ProductSection products={filteredProductsWithCategory} />
             </Box>
           );
         }
@@ -101,24 +114,21 @@ const Home: React.FC = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const data = await authClient.getSession();
-      console.log("data", data);
+      await authClient.getSession();
     };
     fetchData();
   }, []);
 
   return (
     <>
-      <Homenav />
+      {/* <Homenav /> */}
       <HeroSection />
       <Heronav />
 
-      {/* The SearchBar is now part of the Home component */}
-      <Box bg="Cbutton" px={4}>
+      <Box bg={`url(${marble})`} px={4}>
         <SearchBar onSearch={setSearchQuery} />
       </Box>
 
-      {/* Pass the pre-filtered favorites and loading/error states */}
       <HomeFavorites
         products={favoriteProducts}
         isLoading={isLoading}

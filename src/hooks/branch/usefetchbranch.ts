@@ -12,6 +12,10 @@ interface Branch {
     name: string;
   };
   areas: string[];
+  orderType: "pickup" | "delivery" | "both";
+  deliveryRates: { min: number; max: number; price: number }[];
+  location: { lat: number; lng: number };
+  address: string;
 }
 
 export const useFetchBranch = () => {

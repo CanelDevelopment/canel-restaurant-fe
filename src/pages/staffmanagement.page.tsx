@@ -8,6 +8,7 @@ import { useFetchStaff } from "@/hooks/user/usefetchstaff";
 import { useDeleteStaff } from "@/hooks/user/usedeletestaff";
 import { type StaffMember } from "@/hooks/user/usefetchstaff";
 import { EditStaffModal } from "@/components/admin/staffmanagement/editstaffmodal";
+
 type TableRow = {
   checked: JSX.Element;
   name: string;
@@ -16,7 +17,7 @@ type TableRow = {
   lastLogin: string;
   dateCreated: string;
   controls?: ("Editar" | "Eliminar")[];
-  id: string; // This type requires 'id' to be a string
+  id: string;
 };
 
 const StaffManagement = () => {
@@ -32,6 +33,13 @@ const StaffManagement = () => {
     console.log("STAFFF:-", staff);
     setSelectedStaff(staff);
     setIsModalOpen(true);
+  };
+
+  const [visibleCount, setVisibleCount] = useState(10);
+
+  // 2. Create the function to load more items.
+  const loadMore = () => {
+    setVisibleCount((prevCount) => prevCount + 10); // Load 10 more
   };
 
   const columns = [
@@ -81,7 +89,7 @@ const StaffManagement = () => {
     },
     {
       accessorKey: "name",
-      header: "Nom",
+      header: "Nombre",
       key: "name",
       cell: ({ row }: { row: any }) => (
         <div className="flex flex-col gap-1 group">
@@ -101,12 +109,11 @@ const StaffManagement = () => {
                 color={"#FF5E5E"}
                 cursor={"pointer"}
                 onClick={() => {
-                  // This is where the ID is used. It must not be undefined.
-                  console.log("ATTEMPTING TO DELETE WITH ID:", row.original.id);
+                  console.log("INTENTANDO ELIMINAR CON ID:", row.original.id);
                   if (row.original.id) {
                     deleteStaff({ id: row.original.id });
                   } else {
-                    console.error("DELETE FAILED: ID is undefined!");
+                    console.error("ELIMINACIÓN FALLIDA: ¡ID indefinido!");
                   }
                 }}
               >
@@ -117,8 +124,8 @@ const StaffManagement = () => {
         </div>
       ),
     },
-    { accessorKey: "role", header: "Rôle", key: "role" },
-    { accessorKey: "status", header: "statut", key: "status" },
+    { accessorKey: "role", header: "Rol", key: "role" },
+    { accessorKey: "status", header: "Estado", key: "status" },
     {
       accessorKey: "dateCreated",
       header: "Fecha de Creación",
@@ -137,7 +144,7 @@ const StaffManagement = () => {
           lastLogin: user.lastLogin || "—",
           dateCreated: new Date(user.createdAt).toLocaleDateString(),
           controls: ["Editar", "Eliminar"],
-          checked: <></>, // Add a placeholder for the checked property
+          checked: <></>,
         };
       });
 
@@ -146,6 +153,8 @@ const StaffManagement = () => {
       setUserRows([]);
     }
   }, [staffData]);
+
+  const hasMore = visibleCount < (staffData?.length || 0);
 
   return (
     <>
@@ -167,10 +176,12 @@ const StaffManagement = () => {
         <Box px={[0, 8]}>
           <DynamicTable
             showsimpleSearch={true}
-            placeholderprops="Buscar por rol y nom"
+            placeholderprops="Buscar por rol y nombre"
             data={userRows}
             columns={columns}
             isLoading={isLoading}
+            onLoadMore={loadMore}
+            hasMore={hasMore}
           />
         </Box>
       </Box>

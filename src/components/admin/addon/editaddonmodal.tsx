@@ -147,7 +147,7 @@ export const EditAddonModal = ({
             roundedTop={"lg"}
             pb={8}
           >
-            Edit Addon Item
+            Editar Elemento del Complemento
           </Dialog.Header>
           <Dialog.CloseTrigger />
           <Dialog.Body>
@@ -156,11 +156,11 @@ export const EditAddonModal = ({
               <GridItem colSpan={2}>
                 <Box>
                   <Text mb={2} fontWeight="medium">
-                    Addon Image
+                    Imagen del Complemento
                   </Text>
                   <Image
                     src={imagePreview || "https://via.placeholder.com/250"}
-                    alt="Addon image"
+                    alt="Imagen del complemento"
                     loading="lazy"
                     borderRadius="md"
                     boxSize="250px"
@@ -169,12 +169,12 @@ export const EditAddonModal = ({
                     borderColor="gray.200"
                   />
                   <Button as="label" mt={3} size="sm" width="100%">
-                    Change Image
+                    Cambiar Imagen
                     <input
                       type="file"
                       accept="image/*"
                       onChange={handleFileChange}
-                      className="hidden" // Hide the default input
+                      className="hidden"
                       style={{ display: "none" }}
                     />
                   </Button>
@@ -189,18 +189,18 @@ export const EditAddonModal = ({
               >
                 <Box>
                   <Text mb={1} letterSpacing={0.5}>
-                    Name
+                    Nombre
                   </Text>
                   <Input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Addon Name"
+                    placeholder="Nombre del complemento"
                   />
                 </Box>
 
                 <Box>
                   <Text mb={1} letterSpacing={0.5}>
-                    Price
+                    Precio
                   </Text>
                   <Input
                     type="number"
@@ -212,7 +212,7 @@ export const EditAddonModal = ({
 
                 <Box>
                   <Text mb={1} letterSpacing={0.5}>
-                    Category
+                    Categoría
                   </Text>
                   <Select.Root
                     collection={categoryCollection}
@@ -259,12 +259,12 @@ export const EditAddonModal = ({
 
                 <Box>
                   <Text mb={1} letterSpacing={0.5}>
-                    Description
+                    Descripción
                   </Text>
                   <Textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Addon Description"
+                    placeholder="Descripción del complemento"
                     rows={3}
                   />
                 </Box>
@@ -273,7 +273,7 @@ export const EditAddonModal = ({
           </Dialog.Body>
           <Dialog.Footer>
             <Button variant="ghost" mr={3} onClick={onClose}>
-              Cancel
+              Cancelar
             </Button>
             <Button
               colorScheme="teal"
@@ -282,7 +282,7 @@ export const EditAddonModal = ({
               pb={1}
               letterSpacing={0.7}
             >
-              Save Changes
+              Guardar Cambios
             </Button>
           </Dialog.Footer>
         </Dialog.Content>

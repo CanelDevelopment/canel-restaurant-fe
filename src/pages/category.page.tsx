@@ -4,7 +4,7 @@ import { FoodHeader } from "@/components/admin/foodcategory/foodheader";
 import { DynamicTable } from "@/components/admin/table/dynamictable";
 import { Box, Text, Checkbox, Button, Center, Spinner } from "@chakra-ui/react";
 import { CustomeSwitch } from "@/components/admin/food Item/customeswitch";
-import { useState, type JSX } from "react";
+import { useEffect, useMemo, useState, type JSX } from "react";
 import { useFetchCategories } from "@/hooks/category/usefetchcategory";
 import { useDeleteCategory } from "@/hooks/category/usedeletecategory";
 import toast from "react-hot-toast";
@@ -19,7 +19,7 @@ export type Category = {
   description: string;
   status: JSX.Element;
   date: string;
-  controls?: ("Edit" | "Delete")[];
+  controls?: ("Editar" | "Eliminar")[];
   pusblish: boolean;
   visibility: boolean;
   createdAt: string;
@@ -94,7 +94,7 @@ const Category = () => {
     },
     {
       accessorKey: "name",
-      header: "Name",
+      header: "Nombre",
       cell: ({ row }: { row: any }) => (
         <Box className="flex flex-col gap-1 group" w={"200px"}>
           <Text as={"span"}>{row.original.name}</Text>
@@ -105,7 +105,7 @@ const Category = () => {
       accessorKey: "description",
       header: () => (
         <Box width="600px" textAlign={"start"}>
-          Description
+          Descripción
         </Box>
       ),
       cell: ({ row }: { row: any }) => (
@@ -114,9 +114,9 @@ const Category = () => {
     },
     {
       accessorKey: "status",
-      header: "Status",
+      header: "Estado",
       cell: ({ row }: { row: any }) => (
-        <Box w={"250px"}>
+        <Box w={"250px"} position={"relative"} zIndex={0}>
           <Text as={"span"}>
             <CustomeSwitch
               isChecked={row.original.visibility}
@@ -131,11 +131,11 @@ const Category = () => {
     },
     {
       accessorKey: "date",
-      header: "Date",
+      header: "Fecha",
       cell: ({ row }: { row: any }) => (
         <Box w={"200px"}>
           <Text>
-            {new Date(row.original.date).toLocaleDateString("fr-FR", {
+            {new Date(row.original.date).toLocaleDateString("es-ES", {
               day: "2-digit",
               month: "2-digit",
               year: "numeric",
@@ -150,7 +150,9 @@ const Category = () => {
             w={"100px"}
             letterSpacing={0.7}
           >
-            <Text mb={1}>{row.original.pusblish ? "Publish" : "Pending"}</Text>
+            <Text mb={1}>
+              {row.original.pusblish ? "Publicado" : "Pendiente"}
+            </Text>
           </Button>
         </Box>
       ),
@@ -162,83 +164,82 @@ const Category = () => {
     mutate: deleteCategory,
     isPending: deletePending,
     isError: deleteError,
-    isSuccess,
   } = useDeleteCategory();
 
-  isSuccess ? toast.success("Deleted successfully") : "";
-
-  const Tabledata =
-    data
-      ?.slice() // Create a shallow copy of the array
-      .reverse()
-      .map(
-        (cat: {
-          id: any;
-          name: any;
-          description: any;
-          visibility: any;
-          createdAt: any;
-        }) => ({
-          id: cat.id,
-          checked: (
-            <Box mr={10}>
-              <Checkbox.Root>
-                <Checkbox.HiddenInput />
-                <Checkbox.Control
-                  border={"0.5px solid #949494"}
-                  rounded={"md"}
-                  bgColor={"#F6F6F6"}
-                />
-              </Checkbox.Root>
-            </Box>
-          ),
-          name: (
-            <div className="flex flex-col gap-1 group">
-              <span>{cat.name}</span>
-              <div className="flex gap-2 text-sm invisible group-hover:visible transition-all duration-200">
-                {deletePending ? (
-                  <Center>
-                    <Spinner size={"md"} />
-                  </Center>
-                ) : deleteError ? (
-                  toast.error("Can't delete")
-                ) : (
-                  <>
-                    <Text
-                      textDecoration={"underline"}
-                      color={"#4394D7"}
-                      cursor={"pointer"}
-                      onClick={() =>
-                        setEditingCategory({
-                          id: cat.id,
-                          name: cat.name,
-                          description: cat.description,
-                        })
-                      }
-                    >
-                      Edit
-                    </Text>
-                    <Text
-                      textDecoration={"underline"}
-                      color={"#FF5E5E"}
-                      cursor={"pointer"}
-                      onClick={() => deleteCategory(cat.id)}
-                    >
-                      Delete
-                    </Text>
-                  </>
-                )}
+  const Tabledata = useMemo(() => {
+    return (
+      data
+        ?.slice()
+        .reverse()
+        .map(
+          (cat: {
+            id: any;
+            name: any;
+            description: any;
+            visibility: any;
+            createdAt: any;
+          }) => ({
+            id: cat.id,
+            checked: (
+              <Box mr={10}>
+                <Checkbox.Root>
+                  <Checkbox.HiddenInput />
+                  <Checkbox.Control
+                    border={"0.5px solid #949494"}
+                    rounded={"md"}
+                    bgColor={"#F6F6F6"}
+                  />
+                </Checkbox.Root>
+              </Box>
+            ),
+            name: (
+              <div className="flex flex-col gap-1 group">
+                <span>{cat.name}</span>
+                <div className="flex gap-2 text-sm invisible group-hover:visible transition-all duration-200">
+                  {deletePending ? (
+                    <Center>
+                      <Spinner size={"md"} />
+                    </Center>
+                  ) : deleteError ? (
+                    toast.error("No se puede eliminar")
+                  ) : (
+                    <>
+                      <Text
+                        textDecoration={"underline"}
+                        color={"#4394D7"}
+                        cursor={"pointer"}
+                        onClick={() =>
+                          setEditingCategory({
+                            id: cat.id,
+                            name: cat.name,
+                            description: cat.description,
+                          })
+                        }
+                      >
+                        Editar
+                      </Text>
+                      <Text
+                        textDecoration={"underline"}
+                        color={"#FF5E5E"}
+                        cursor={"pointer"}
+                        onClick={() => deleteCategory(cat.id)}
+                      >
+                        Eliminar
+                      </Text>
+                    </>
+                  )}
+                </div>
               </div>
-            </div>
-          ),
-          description: cat.description || "-",
-          // status: <CustomeSwitch />,
-          date: cat.createdAt,
-          controls: ["Edit", "Delete"],
-          pusblish: cat.visibility,
-          visibility: cat.visibility,
-        })
-      ) || [];
+            ),
+            description: cat.description || "-",
+            date: cat.createdAt,
+            controls: ["Editar", "Eliminar"],
+            pusblish: cat.visibility,
+            visibility: cat.visibility,
+          })
+        ) || []
+    );
+  }, [data, deletePending, deleteError, deleteCategory]);
 
   const [editingCategory, setEditingCategory] = useState<{
     id: string;
@@ -249,6 +250,27 @@ const Category = () => {
   const { mutate: updateCategory, isPending: isUpdating } = useUpdateCategory();
 
   const queryClient = useQueryClient();
+
+  const [displayedData, setDisplayedData] = useState<typeof Tabledata>([]);
+  const [visibleCount, setVisibleCount] = useState(5);
+  const [hasMore, setHasMore] = useState(true);
+
+  useEffect(() => {
+    if (Tabledata.length > 0) {
+      const initial = Tabledata.slice(0, 5);
+      setDisplayedData(initial);
+      setVisibleCount(5);
+      setHasMore(Tabledata.length > 5);
+    }
+  }, [Tabledata]);
+
+  const handleLoadMore = () => {
+    const nextCount = visibleCount + 5;
+    const newData = Tabledata.slice(0, nextCount);
+    setDisplayedData(newData);
+    setVisibleCount(nextCount);
+    setHasMore(nextCount < Tabledata.length);
+  };
 
   const handleUpdateSubmit = (payload: {
     id: string;
@@ -271,19 +293,24 @@ const Category = () => {
         {/* Heading */}
         <DashboardHeading title="CATEGORÍA DE ALIMENTOS" />
         <Box px={[0, 0, 8]} rounded={"none"}>
-          <FoodHeader link="/dashboard/add_new_category" />
+          <FoodHeader
+            link="/dashboard/add_new_category"
+            showCategoryModal={true}
+          />
         </Box>
         <Box px={[0, 8]}>
           {isError ? (
             <Center bgColor={"white"}>
-              <Text>No category!</Text>
+              <Text>¡No hay categorías!</Text>
             </Center>
           ) : (
             <DynamicTable
               showsimpleSearch={true}
-              data={Tabledata}
+              data={displayedData}
               columns={columns}
               isLoading={isPending}
+              hasMore={hasMore}
+              onLoadMore={handleLoadMore}
             />
           )}
         </Box>

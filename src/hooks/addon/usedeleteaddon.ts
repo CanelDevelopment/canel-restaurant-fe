@@ -3,21 +3,24 @@ import {
   type WithMessage,
   type ErrorWithMessage,
 } from "@/configs/axios.config";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 
 export const useDeleteAddonitem = () => {
-  return useMutation<WithMessage, ErrorWithMessage, any>({
-    mutationFn: async (id: any) => {
+  const queryClient = useQueryClient();
+
+  return useMutation<WithMessage, ErrorWithMessage, string>({
+    mutationFn: async (id: string) => {
       return await axios.post(`/addon/delete-addonitem/${id}`);
     },
     mutationKey: ["delete addon item"],
     retry: false,
     onSuccess() {
-      toast.success("Addon item deleted successfully!!!");
+      toast.success("¡Artículo adicional eliminado exitosamente!");
+      queryClient.invalidateQueries({ queryKey: ["addon-item"] });
     },
     onError: (error) => {
-      toast.error(error.response?.data.message || "Something went wrong");
+      toast.error(error.response?.data.message || "Algo salió mal");
     },
   });
 };

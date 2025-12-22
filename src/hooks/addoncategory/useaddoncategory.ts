@@ -22,11 +22,11 @@ export const useAddonCategory = () => {
     mutationKey: ["create addon"],
     retry: false,
     onSuccess() {
-      toast.success("Addon added successfully!!!");
+      toast.success("¡Complemento agregado con éxito!");
       queryClient.invalidateQueries({ queryKey: ["addon-category"] });
     },
     onError: (error) => {
-      toast.error(error?.response?.data.message || "Something went wrong");
+      toast.error(error?.response?.data.message || "Algo salió mal");
     },
   });
 };

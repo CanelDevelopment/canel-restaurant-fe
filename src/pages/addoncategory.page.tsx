@@ -9,17 +9,16 @@ import { useFetchAddonCategories } from "@/hooks/addoncategory/usefetchaddoncate
 import { useDeleteAddon } from "@/hooks/addoncategory/usedeleteaddon";
 import { useUpdateAddonCategory } from "@/hooks/addoncategory/useupdateaddoncategory";
 import { EditAddonCategoryModal } from "@/components/admin/addon/editaddoncategory";
-// import { AddonContent } from "@/components/admin/addon/addoncontent";
 
 export type Category = {
   id: string;
   checked: JSX.Element;
-  name: string;
+  name: string | JSX.Element;
   description: string;
-  status: JSX.Element;
+  status: boolean;
   date: string;
-  controls?: ("Editar" | "Eliminar")[];
   pusblish: boolean;
+  controls?: ("Editar" | "Eliminar")[];
 };
 
 const AddonCategory = () => {
@@ -34,12 +33,11 @@ const AddonCategory = () => {
   } | null>(null);
 
   const { data, isLoading } = useFetchAddonCategories();
-
   const { mutate: deleteAddonCategory } = useDeleteAddon();
-
   const { mutate: updateAddonCategory, isPending: isUpdating } =
     useUpdateAddonCategory();
 
+  // Toggle category visibility (Activo/Inactivo)
   const handleVisibilityToggle = (
     addonCategoryId: string,
     newVisibility: boolean
@@ -136,17 +134,14 @@ const AddonCategory = () => {
       accessorKey: "status",
       header: "Estado",
       cell: ({ row }: { row: any }) => (
-        // console.log(row.original.id),
         <Box w={"200px"}>
-          <span>
-            <CustomeSwitch
-              isChecked={row.original.status}
-              isLoading={_updatingVisibilityId === row.original.id} // disable while updating
-              onChange={(newVisibility) =>
-                handleVisibilityToggle(row.original.id, newVisibility)
-              }
-            />
-          </span>
+          <CustomeSwitch
+            isChecked={row.original.status}
+            isLoading={_updatingVisibilityId === row.original.id}
+            onChange={(newVisibility) =>
+              handleVisibilityToggle(row.original.id, newVisibility)
+            }
+          />
         </Box>
       ),
     },
@@ -154,98 +149,101 @@ const AddonCategory = () => {
       accessorKey: "date",
       header: "Fecha",
       cell: ({ row }: { row: any }) => (
-        console.log(row.original.date),
-        (
-          <Box w={"200px"}>
-            <Text>
-              {new Date(row.original.date).toLocaleDateString("fr-FR", {
-                day: "2-digit",
-                month: "2-digit",
-                year: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </Text>
-            <Button
-              bgColor={row.original.pusblish ? "#199F50" : "#F48D1A"}
-              color={"#fff"}
-              rounded={"lg"}
-            >
-              {row.original.pusblish ? "Publicado" : "Pendiente"}
-            </Button>
-          </Box>
-        )
+        <Box w={"200px"}>
+          <Text>
+            {new Date(row.original.date).toLocaleDateString("es-ES", {
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </Text>
+          <Button
+            bgColor={row.original.pusblish ? "#199F50" : "#F48D1A"}
+            color={"#fff"}
+            rounded={"lg"}
+            mt={1}
+          >
+            {row.original.pusblish ? "Publicado" : "Pendiente"}
+          </Button>
+        </Box>
       ),
     },
   ];
 
-  const Tabledata =
+  // Table Data
+  const Tabledata: Category[] =
     data?.map(
-      (cat: { id: any; name: any; description: any; visibility: any }) => (
-        console.log(cat),
-        {
-          checked: (
-            <Box mr={10}>
-              <Checkbox.Root>
-                <Checkbox.HiddenInput />
-                <Checkbox.Control
-                  border={"0.5px solid #949494"}
-                  rounded={"md"}
-                  bgColor={"#F6F6F6"}
-                />
-              </Checkbox.Root>
-            </Box>
-          ),
-          name: (
-            <div className="flex flex-col gap-1 group">
-              <span>{cat.name}</span>
-              <div className="flex gap-2 text-sm invisible group-hover:visible transition-all duration-200">
-                <Text
-                  textDecoration={"underline"}
-                  color={"#4394D7"}
-                  cursor={"pointer"}
-                  onClick={() =>
-                    setEditingAddonCategory({
-                      id: cat.id,
-                      name: cat.name,
-                      description: cat.description,
-                    })
-                  }
-                >
-                  Editar
-                </Text>
-                <Text
-                  textDecoration={"underline"}
-                  color={"#FF5E5E"}
-                  cursor={"pointer"}
-                  onClick={() => deleteAddonCategory(cat.id)}
-                >
-                  Eliminar
-                </Text>
-              </div>
+      (cat: {
+        id: string;
+        name: string;
+        description: string;
+        visibility: boolean;
+      }) => ({
+        id: cat.id,
+        checked: (
+          <Box mr={10}>
+            <Checkbox.Root>
+              <Checkbox.HiddenInput />
+              <Checkbox.Control
+                border={"0.5px solid #949494"}
+                rounded={"md"}
+                bgColor={"#F6F6F6"}
+              />
+            </Checkbox.Root>
+          </Box>
+        ),
+        name: (
+          <div className="flex flex-col gap-1 group">
+            <span>{cat.name}</span>
+            <div className="flex gap-2 text-sm invisible group-hover:visible transition-all duration-200">
+              <Text
+                textDecoration={"underline"}
+                color={"#4394D7"}
+                cursor={"pointer"}
+                onClick={() =>
+                  setEditingAddonCategory({
+                    id: cat.id,
+                    name: cat.name,
+                    description: cat.description,
+                  })
+                }
+              >
+                Editar
+              </Text>
+              <Text
+                textDecoration={"underline"}
+                color={"#FF5E5E"}
+                cursor={"pointer"}
+                onClick={() => deleteAddonCategory(cat.id)}
+              >
+                Eliminar
+              </Text>
             </div>
-          ),
-          description: cat.description || "-",
-          status: cat.visibility,
-          pusblish: cat.visibility,
-          date: new Date().toLocaleString(),
-          controls: ["Editar", "Eliminar"],
-          id: cat.id,
-        }
-      )
+          </div>
+        ),
+        description: cat.description || "-",
+        status: cat.visibility,
+        pusblish: cat.visibility,
+        date: new Date().toISOString(),
+        controls: ["Editar", "Eliminar"],
+      })
     ) || [];
 
   return (
     <>
       <Box width={["100%"]} bg="#f3f3f3">
         <DashLogoButtons />
-
-        {/* Heading */}
         <DashboardHeading title="CATEGORÍA DE COMPLEMENTO" />
+
         <Box px={[0, 0, 8]} rounded={"none"}>
-          {/* <AddonContent link="/dashboard/add_addon_category" /> */}
-          <FoodHeader link="/dashboard/add_addon_category " />
+          <FoodHeader
+            link="/dashboard/add_addon_category"
+            showAddonCategory={true}
+          />
         </Box>
+
         <Box px={[0, 8]}>
           <DynamicTable
             showSearch={true}

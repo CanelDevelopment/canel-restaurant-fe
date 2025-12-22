@@ -20,9 +20,9 @@ import { useEffect, useMemo, useState } from "react";
 import { LocationSearch } from "./locationsearch";
 import { useForm } from "react-hook-form";
 import { useAddBranch } from "@/hooks/branch/usecreatebranch";
-import type { LatLngTuple } from "leaflet";
 import { useFetchCities } from "@/hooks/branch/usefetchcities"; // 1. Import the new hook
 import { useAddSchedule } from "@/hooks/schedule/usecreateschedule";
+import { FaChevronDown } from "react-icons/fa6";
 
 interface ManagerOption {
   label: string;
@@ -36,24 +36,30 @@ interface BranchFormData {
   email: string;
   openingTime: string;
   closingTime: string;
+  operationHours?: string;
   manager: string;
   cityName: string;
   state?: string;
   status: string;
+  deliveryRates: { min: number; max: number; price: number }[];
   areas?: string[];
+  orderType: string;
 }
 
 export const AddBranchContent: React.FC = () => {
   const [managers, setManagers] = useState<ManagerOption[]>([]);
   const collection = createListCollection({ items: managers });
 
-  // --- 2. Call the hook to fetch cities and get loading state ---
   const { data: cityData, isLoading: isLoadingCities } = useFetchCities();
   const { mutate: addSchedule } = useAddSchedule();
   const [cityInputValue, setCityInputValue] = useState("");
+  const [orderType, setOrderType] = useState("");
+  const [deliveryRates, setDeliveryRates] = useState([
+    { min: 0, max: 1, price: 0 },
+  ]);
 
-  const [openTime, _setOpenTime] = useState(""); // e.g. "09:00"
-  const [closeTime, _setCloseTime] = useState("");
+  // const [openTime, _setOpenTime] = useState("");
+  // const [closeTime, _setCloseTime] = useState("");
 
   const cityCollection = useMemo(() => {
     const formattedCities =
@@ -81,7 +87,7 @@ export const AddBranchContent: React.FC = () => {
 
       if (response?.data) {
         const options = response.data.users.map((user) => ({
-          label: user.name ?? user.email ?? "Unnamed",
+          label: user.name ?? user.email ?? "Sin nombre",
           value: user.id,
         }));
 
@@ -105,23 +111,26 @@ export const AddBranchContent: React.FC = () => {
   const onSubmit = (values: BranchFormData) => {
     const payload = {
       ...values,
+      orderType: values.orderType,
+      operationHours: values.openingTime + " - " + values.closingTime,
+      deliveryRates: deliveryRates,
       areas: values.areas && values.areas.length > 0 ? values.areas : undefined,
     };
-    console.log("Submitting data:", payload);
+
+    console.log("rates", deliveryRates);
+    console.log("payload", payload);
+
     mutate(payload, {
       onSuccess: (res) => {
-        const branchId = res.id; // jo bhi response shape ho
-        if (branchId && openTime && closeTime) {
-          // sab days ke liye same schedule
+        const branchId = res.id;
+        if (branchId && values.openingTime && values.closingTime) {
           for (let day = 0; day < 7; day++) {
             addSchedule({
               branchId,
               dayOfWeek: day,
               isActive: true,
               timeSlots: [
-                { openTime, closeTime },
-                // agar 2nd slot bhi chahiye to yaha add kar
-                // { openTime: "20:00", closeTime: "23:00" }
+                { openTime: values.openingTime, closeTime: values.closingTime },
               ],
             });
           }
@@ -130,8 +139,20 @@ export const AddBranchContent: React.FC = () => {
     });
   };
 
-  const handleLocationChange = (position: LatLngTuple) => {
-    setValue("location", JSON.stringify(position), { shouldValidate: true });
+  console.log(deliveryRates);
+
+  const handleLocationChange = (data: {
+    lat: number;
+    lng: number;
+    address: string;
+  }) => {
+    const coords = [data.lat, data.lng];
+    setValue("location", JSON.stringify(coords), { shouldValidate: true });
+
+    setValue("address", data.address, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
   };
 
   const [inputValue, setInputValue] = useState("");
@@ -156,6 +177,13 @@ export const AddBranchContent: React.FC = () => {
     );
   };
 
+  const orderTypeOptions = [
+    { label: "Both", value: "both" },
+    { label: "Pickup", value: "pickup" },
+    { label: "Delivery", value: "delivery" },
+  ];
+  const orderTypeCollection = createListCollection({ items: orderTypeOptions });
+
   return (
     <Box>
       <Box
@@ -163,26 +191,26 @@ export const AddBranchContent: React.FC = () => {
         display={"flex"}
         flexDirection={["column", "column", "row"]}
       >
-        {/* Left side */}
+        {/* Lado izquierdo */}
         <Box w={["100%", "100%", "50%"]} px={[3, 5, 5, 10]} py={7}>
           <Box maxW="md">
             <VStack align="stretch" color={"#000"} spaceY={5}>
-              {/* Branch Name */}
+              {/* Nombre de Sucursal */}
               <Flex flexDirection={["column", "row", "column", "row"]}>
                 <Text minW={"150px"} mb="1">
-                  Nom de Sucursal
+                  Nombre de Sucursal
                 </Text>
                 <Input
                   border={"none"}
                   bgColor={"#F4F4F4"}
                   rounded={"lg"}
                   _placeholder={{ color: "#929292" }}
-                  placeholder="Ingrese el nom de la sucursal"
+                  placeholder="Ingrese el nombre de sucursal"
                   {...register("name", { required: true })}
                 />
               </Flex>
 
-              {/* Full Address */}
+              {/* Dirección completa */}
               <Flex flexDirection={["column", "row", "column", "row"]}>
                 <Text minW={"150px"} mb="1">
                   Dirección completa
@@ -192,28 +220,28 @@ export const AddBranchContent: React.FC = () => {
                   bgColor={"#F4F4F4"}
                   rounded={"lg"}
                   _placeholder={{ color: "#929292" }}
-                  placeholder="Ingrese la Dirección completa"
+                  placeholder="Ingrese la dirección completa"
                   {...register("address", { required: true })}
                 />
               </Flex>
 
-              {/* Email Address */}
+              {/* Email */}
               <Flex flexDirection={["column", "row", "column", "row"]}>
                 <Text minW={"150px"} mb="1">
-                  Email Addresso
+                  E-mail
                 </Text>
                 <Input
                   border={"none"}
                   bgColor={"#F4F4F4"}
                   rounded={"lg"}
                   _placeholder={{ color: "#929292" }}
-                  placeholder="Ingrese el email Addresso"
+                  placeholder="Ingrese el E-mail"
                   type="email"
                   {...register("email", { required: true })}
                 />
               </Flex>
 
-              {/* Phone Number */}
+              {/* Número de Teléfono */}
               <Flex flexDirection={["column", "row", "column", "row"]}>
                 <Text minW={"150px"} mb="1">
                   Número de Teléfono
@@ -229,14 +257,146 @@ export const AddBranchContent: React.FC = () => {
                   {...register("phoneNumber", {
                     required: true,
                     pattern: {
-                      value: /^[0-9+\s()-]+$/, // only digits, +, space, () and -
-                      message: "Invalid phone number",
+                      value: /^[0-9+\s()-]+$/,
+                      message: "Número de teléfono inválido",
                     },
                   })}
                 />
               </Flex>
 
-              {/* Operating Hours */}
+              {/* Delivery rate */}
+              <Flex flexDirection={"column"}>
+                <Text mb="2">Delivery Rate Slabs</Text>
+
+                {deliveryRates.map((slab, index) => (
+                  <Flex key={index} gap={3} mb={2}>
+                    <Input
+                      type="number"
+                      placeholder="Min KM"
+                      bg="#F4F4F4"
+                      value={slab.min}
+                      onChange={(e) => {
+                        const updated = [...deliveryRates];
+                        updated[index].min = Number(e.target.value);
+                        console.log("updated", updated);
+                        // console.log("updated",...deluver )
+                        setDeliveryRates(updated);
+                      }}
+                    />
+                    <Input
+                      type="number"
+                      placeholder="Max KM"
+                      bg="#F4F4F4"
+                      value={slab.max}
+                      onChange={(e) => {
+                        const updated = [...deliveryRates];
+                        updated[index].max = Number(e.target.value);
+                        setDeliveryRates(updated);
+                      }}
+                    />
+                    <Input
+                      type="number"
+                      placeholder="Price"
+                      bg="#F4F4F4"
+                      value={slab.price}
+                      onChange={(e) => {
+                        const updated = [...deliveryRates];
+                        updated[index].price = Number(e.target.value);
+                        setDeliveryRates(updated);
+                      }}
+                    />
+                    <Button
+                      colorScheme="red"
+                      onClick={() => {
+                        const updated = deliveryRates.filter(
+                          (_, i) => i !== index
+                        );
+                        setDeliveryRates(updated);
+                      }}
+                    >
+                      X
+                    </Button>
+                  </Flex>
+                ))}
+
+                <Button
+                  mt={2}
+                  onClick={() =>
+                    setDeliveryRates([
+                      ...deliveryRates,
+                      { min: 0, max: 0, price: 0 },
+                    ])
+                  }
+                >
+                  Add New Slab
+                </Button>
+              </Flex>
+
+              {/* Order Type */}
+              <Flex flexDirection={["column", "row", "column", "row"]}>
+                <Text minW={"150px"} mb="1">
+                  Tipo de orden
+                </Text>
+                <Select.Root
+                  collection={orderTypeCollection}
+                  value={orderType ? [orderType] : []}
+                  onValueChange={(details) => {
+                    const selected = details.value[0] ?? "";
+
+                    if (selected) {
+                      setOrderType(selected);
+                      setValue("orderType", selected, { shouldValidate: true });
+                    }
+                  }}
+                >
+                  <Select.Control>
+                    <Select.Trigger
+                      // Using your established styling for consistency
+                      css={{
+                        width: "100%",
+                        height: "40px",
+                        paddingInline: "1rem",
+                        backgroundColor: "#EBEBEB",
+                        borderRadius: "lg",
+                        border: "none",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
+                      <Select.ValueText placeholder="Seleccione un tipo" />
+                      <Select.Indicator>
+                        <FaChevronDown />
+                      </Select.Indicator>
+                    </Select.Trigger>
+                  </Select.Control>
+                  <Portal>
+                    <Select.Positioner>
+                      <Select.Content>
+                        {/* 4. Map over the collection's items */}
+                        {orderTypeCollection.items.map((item) => (
+                          <Select.Item item={item} key={item.value}>
+                            {item.label}
+                          </Select.Item>
+                        ))}
+                      </Select.Content>
+                    </Select.Positioner>
+                  </Portal>
+                </Select.Root>
+                {/* <Input
+                  border={"none"}
+                  bgColor={"#F4F4F4"}
+                  rounded={"lg"}
+                  _placeholder={{ color: "#929292" }}
+                  placeholder="Ingrese el tipo de orden de sucursal"
+                  type="number"
+                  {...register("orderType", {
+                    required: true,
+                  })}
+                /> */}
+              </Flex>
+
+              {/* Horario de Operación */}
               <Flex flexDirection={["column", "row", "column", "row"]}>
                 <Text minW={"150px"} mb="1">
                   Horario de Operación
@@ -250,7 +410,7 @@ export const AddBranchContent: React.FC = () => {
                     _placeholder={{ color: "#929292" }}
                     {...register("openingTime", { required: true })}
                   />
-                  <Text alignSelf="center">to</Text>
+                  <Text alignSelf="center">a</Text>
                   <Input
                     type="time"
                     border={"none"}
@@ -262,7 +422,7 @@ export const AddBranchContent: React.FC = () => {
                 </Flex>
               </Flex>
 
-              {/* Branch Manager */}
+              {/* Gerente de Sucursal */}
               <Flex flexDirection={["column", "row", "column", "row"]}>
                 <Text minW={"150px"} mb="1">
                   Gerente de Sucursal
@@ -303,19 +463,17 @@ export const AddBranchContent: React.FC = () => {
                 </Select.Root>
               </Flex>
 
-              {/* --- 4. Updated City Combobox --- */}
+              {/* Ciudad */}
               <Flex flexDirection={["column", "row", "column", "row"]}>
                 <Text minW={"150px"} mb="1">
                   Ciudad
                 </Text>
                 <Combobox.Root
-                  // 1. Allow custom values
                   allowCustomValue
                   collection={cityCollection}
                   onValueChange={(details) => {
                     const selectedCity = details.value?.[0];
                     if (selectedCity) {
-                      // Update both the form value and the input text
                       setValue("cityName", selectedCity, {
                         shouldValidate: true,
                       });
@@ -329,9 +487,7 @@ export const AddBranchContent: React.FC = () => {
                     border={"none"}
                     bgColor={"#EBEBEB"}
                     rounded={"lg"}
-                    // 2. Add onBlur to save custom input
                     onBlur={() => {
-                      // If the input has text, make sure it's set as the form value
                       if (cityInputValue) {
                         setValue("cityName", cityInputValue, {
                           shouldValidate: true,
@@ -340,8 +496,8 @@ export const AddBranchContent: React.FC = () => {
                     }}
                   >
                     <Combobox.Input
-                      placeholder="Search or add a new city..."
-                      value={cityInputValue} // Bind value to state
+                      placeholder="Buscar o agregar una nueva ciudad..."
+                      value={cityInputValue}
                       onChange={(e) => setCityInputValue(e.target.value)}
                       _placeholder={{ color: "#929292" }}
                     />
@@ -359,7 +515,7 @@ export const AddBranchContent: React.FC = () => {
                   <Portal>
                     <Combobox.Positioner>
                       <Combobox.Content>
-                        <Combobox.Empty>No city found</Combobox.Empty>
+                        <Combobox.Empty>No se encontró ciudad</Combobox.Empty>
                         {cityCollection.items.map((item) => (
                           <Combobox.Item item={item} key={item.value}>
                             {item.label}
@@ -372,11 +528,12 @@ export const AddBranchContent: React.FC = () => {
                 </Combobox.Root>
               </Flex>
 
+              {/* Áreas a cubrir */}
               <Flex>
-                <Text minW={"150px"}>Domaines à livrer</Text>
+                <Text minW={"150px"}>Áreas a cubrir</Text>
                 <Box w={"full"}>
                   <Input
-                    placeholder="Enter a tag and press Enter"
+                    placeholder="Seleccionar tag"
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyDown={handleKeyDown}
@@ -409,7 +566,7 @@ export const AddBranchContent: React.FC = () => {
           </Box>
         </Box>
 
-        {/* Right side */}
+        {/* Lado derecho */}
         <LocationSearch onLocationChange={handleLocationChange} />
       </Box>
       <Flex justifyContent={"end"} bgColor={"#fff"} px={[3, 5, 5, 10]} py={7}>

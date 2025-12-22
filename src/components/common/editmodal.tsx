@@ -1,12 +1,33 @@
 import { FormControl, FormLabel } from "@chakra-ui/form-control";
-import { Dialog, Button, Input, Textarea, Box } from "@chakra-ui/react";
+import {
+  Dialog,
+  Button,
+  Input,
+  Textarea,
+  Box,
+  Checkbox,
+  Flex,
+  Separator,
+  Stack,
+} from "@chakra-ui/react";
 import { useState, useEffect } from "react";
 
-// The data for the category being edited
+interface DiscountTier {
+  minQty: number;
+  discountAmount: number;
+}
+
+interface VolumeDiscountRules {
+  enabled: boolean;
+  type: string;
+  tiers: DiscountTier[];
+}
+
 type CategoryData = {
   id: string;
   name: string;
   description: string;
+  volumeDiscountRules?: VolumeDiscountRules | null;
 };
 
 interface EditCategoryModalProps {
@@ -27,28 +48,71 @@ export const EditModal = ({
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
 
-  // Pre-fill the form whenever a new category is selected for editing
+  // Volume Discount State
+  const [enableVolumeDiscount, setEnableVolumeDiscount] = useState(false);
+  const [tier1Discount, setTier1Discount] = useState<string | number>("");
+  const [tier2Discount, setTier2Discount] = useState<string | number>("");
+
   useEffect(() => {
     if (category) {
       setName(category.name);
       setDescription(category.description);
+
+      if (
+        category.volumeDiscountRules &&
+        category.volumeDiscountRules.enabled
+      ) {
+        setEnableVolumeDiscount(true);
+
+        const tiers = category.volumeDiscountRules.tiers || [];
+        const t1 = tiers.find((t) => t.minQty === 2);
+        const t2 = tiers.find((t) => t.minQty === 3);
+
+        setTier1Discount(t1 ? t1.discountAmount : "");
+        setTier2Discount(t2 ? t2.discountAmount : "");
+      } else {
+        setEnableVolumeDiscount(false);
+        setTier1Discount("");
+        setTier2Discount("");
+      }
     }
   }, [category]);
 
   const handleSave = () => {
     if (category) {
-      onUpdate({ id: category.id, name, description });
+      const volumeDiscountRules = enableVolumeDiscount
+        ? {
+            enabled: true,
+            type: "fixed_amount_off",
+            tiers: [
+              {
+                minQty: 2,
+                discountAmount: Number(tier1Discount) || 0,
+              },
+              {
+                minQty: 3,
+                discountAmount: Number(tier2Discount) || 0,
+              },
+            ],
+          }
+        : null;
+
+      onUpdate({
+        id: category.id,
+        name,
+        description,
+        volumeDiscountRules,
+      });
     }
   };
 
   return (
     <Dialog.Root
       open={isOpen}
-      onOpenChange={(open) => {
-        if (!open) onClose();
+      onOpenChange={(details) => {
+        if (!details.open) onClose();
       }}
-      //   placement={"center"}
-      size={"md"}
+      size={"lg"}
     >
       <Dialog.Backdrop />
       <Dialog.Positioner>
@@ -62,45 +126,105 @@ export const EditModal = ({
             roundedTop={"lg"}
             pb={8}
           >
-            Edit Category
+            Editar Categoría
           </Dialog.Header>
           <Dialog.CloseTrigger />
           <Dialog.Body>
-            <Box w={"100%"} spaceY={8}>
+            <Stack gap={6} w={"100%"}>
+              {/* Basic Info */}
               <FormControl isRequired>
-                <FormLabel mb={6} letterSpacing={0.5}>
-                  Name
+                <FormLabel mb={2} letterSpacing={0.5}>
+                  Nombre
                 </FormLabel>
                 <Input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Category Name"
+                  placeholder="Nombre de la categoría"
                 />
               </FormControl>
               <FormControl>
-                <FormLabel mb={6} letterSpacing={0.5}>
-                  Description
+                <FormLabel mb={2} letterSpacing={0.5}>
+                  Descripción
                 </FormLabel>
                 <Textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Category Description"
+                  placeholder="Descripción de la categoría"
                 />
               </FormControl>
-            </Box>
+
+              <Separator />
+
+              {/* Volume Discount Section */}
+              <Box bg="#F9F9F9" p={4} rounded="md" border="1px dashed #d1d1d1">
+                <Checkbox.Root
+                  colorPalette={"green"}
+                  checked={enableVolumeDiscount}
+                  onCheckedChange={(e) => setEnableVolumeDiscount(!!e.checked)}
+                  mb={3}
+                >
+                  <Checkbox.HiddenInput />
+                  <Checkbox.Control
+                    bgColor={"#fff"}
+                    border={"1px solid #949494"}
+                  />
+                  <Checkbox.Label
+                    fontFamily={"AmsiProCond-Black"}
+                    color="#000"
+                    fontSize="md"
+                  >
+                    Activar Descuento por Volumen
+                  </Checkbox.Label>
+                </Checkbox.Root>
+
+                {enableVolumeDiscount && (
+                  <Flex gap={4} direction={["column", "row"]}>
+                    <FormControl>
+                      <FormLabel fontSize="sm" mb={1}>
+                        Desc. por Unidad (Cant. 2)
+                      </FormLabel>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="Ej: 1.00"
+                        bg="white"
+                        value={tier1Discount}
+                        onChange={(e) => setTier1Discount(e.target.value)}
+                      />
+                    </FormControl>
+
+                    <FormControl>
+                      <FormLabel fontSize="sm" mb={1}>
+                        Desc. por Unidad (Cant. 3+)
+                      </FormLabel>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="Ej: 2.00"
+                        bg="white"
+                        value={tier2Discount}
+                        onChange={(e) => setTier2Discount(e.target.value)}
+                      />
+                    </FormControl>
+                  </Flex>
+                )}
+              </Box>
+            </Stack>
           </Dialog.Body>
           <Dialog.Footer>
             <Button variant="ghost" mr={3} onClick={onClose}>
-              Cancel
+              Cancelar
             </Button>
             <Button
-              colorScheme="teal"
+              colorPalette="teal"
+              bg="Cgreen"
+              color="Cbutton"
               onClick={handleSave}
               disabled={isLoading}
               pb={1}
               letterSpacing={0.7}
             >
-              Save Changes
+              Guardar Cambios
             </Button>
           </Dialog.Footer>
         </Dialog.Content>

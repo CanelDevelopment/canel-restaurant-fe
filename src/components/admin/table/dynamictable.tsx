@@ -10,7 +10,7 @@ import {
   type ColumnFiltersState,
   type VisibilityState,
 } from "@tanstack/react-table";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Box,
   Text,
@@ -41,7 +41,8 @@ interface DynamicTableProps<TData> {
   showDashboardSearch?: boolean;
   showsimpleSearch?: boolean;
   isLoading?: boolean;
-
+  onLoadMore?: () => void;
+  hasMore?: boolean;
   selectedStatus?: string;
   setSelectedStatus?: (status: string) => void;
 }
@@ -57,8 +58,7 @@ const defaultPageSizeOptions = [
 export function DynamicTable<TData>({
   data,
   columns,
-  showPagination = true,
-  // showButtons = false,
+  showPagination = false,
   headerColor,
   showSearch = true,
   pageSizeOptions = defaultPageSizeOptions,
@@ -66,7 +66,8 @@ export function DynamicTable<TData>({
   showDashboardSearch = false,
   showsimpleSearch = false,
   isLoading = false,
-
+  onLoadMore,
+  hasMore,
   selectedStatus = "all",
   setSelectedStatus,
 }: DynamicTableProps<TData>) {
@@ -111,12 +112,54 @@ export function DynamicTable<TData>({
     },
   });
 
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const loadingRef = useRef(false);
   const pageSizeCollection = createListCollection({ items: pageSizeOptions });
 
-  return (
-    <Box className="bg-white ">
-      {/* Title and Buttons */}
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (!container || !onLoadMore || !hasMore) return;
 
+    const handleScroll = () => {
+      // Prevent multiple simultaneous loads
+      if (loadingRef.current) return;
+
+      const { scrollTop, scrollHeight, clientHeight } = container;
+
+      // Calculate distance from bottom
+      const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+
+      console.log("Scroll:", {
+        scrollTop,
+        scrollHeight,
+        clientHeight,
+        distanceFromBottom,
+        hasMore,
+      });
+
+      // Trigger when within 100px of bottom
+      if (distanceFromBottom < 100 && hasMore) {
+        console.log("Loading more...");
+        loadingRef.current = true;
+        onLoadMore();
+
+        // Reset after 1 second
+        setTimeout(() => {
+          loadingRef.current = false;
+        }, 1000);
+      }
+    };
+
+    container.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      container.removeEventListener("scroll", handleScroll);
+    };
+  }, [hasMore, onLoadMore]);
+
+  return (
+    <Box className="bg-white">
+      {/* Title and Buttons */}
       <Flex
         className="justify-between max-sm:items-center py-4 max-md:flex-col gap-4"
         p={[2, 5]}
@@ -188,7 +231,6 @@ export function DynamicTable<TData>({
           }
           width={["100%", "100%", showDashboardSearch ? "40%" : "100%"]}
           className="edit this"
-          // px={[0, 0, 4]}
         >
           {showSearch ? (
             <>
@@ -268,10 +310,16 @@ export function DynamicTable<TData>({
       </Flex>
 
       {/* Table */}
-      <Box overflowX={"scroll"}>
-        <Table.Root unstyled w={"full"} h={"full"}>
+      <Box
+        ref={scrollRef}
+        overflowX="auto"
+        overflowY="auto"
+        maxH="70vh"
+        position="relative"
+      >
+        <Table.Root unstyled w={"full"} minH={"200px"}>
           {/* Header - No borders */}
-          <Table.Header>
+          <Table.Header position="sticky" top={0} zIndex={1} bg="#ebebeb">
             {table.getHeaderGroups().map((headerGroup) => (
               <Table.Row key={headerGroup.id} bg={"#ebebeb"} height={"70px"}>
                 {headerGroup.headers.map((header) => (
@@ -304,42 +352,76 @@ export function DynamicTable<TData>({
 
           {/* Body - With light gray column borders */}
           <Table.Body>
-            {isLoading ? (
+            {isLoading && data.length === 0 ? (
               <Table.Row>
                 <Table.Cell colSpan={columns.length} p={4}>
                   <SkeletonText noOfLines={10} gap="4" />
                 </Table.Cell>
               </Table.Row>
             ) : table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row, rowIndex) => (
-                <Table.Row
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                  color={"#000"}
-                >
-                  {row.getVisibleCells().map((cell, cellIndex) => (
-                    <Table.Cell
-                      key={cell.id}
-                      bg={rowIndex % 2 === 1 ? "#f6f6f6" : "white"}
-                      borderRight={
-                        cellIndex < row.getVisibleCells().length - 1
-                          ? "1px solid"
-                          : "none"
-                      }
-                      borderColor="gray.200"
-                      py={5}
-                      px={3}
-                      fontFamily={"AmsiProCond"}
-                      width={`${cell.column.getSize()}px`}
-                    >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
+              <>
+                {table.getRowModel().rows.map((row, rowIndex) => (
+                  <Table.Row
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                    color={"#000"}
+                  >
+                    {row.getVisibleCells().map((cell, cellIndex) => (
+                      <Table.Cell
+                        key={cell.id}
+                        bg={rowIndex % 2 === 1 ? "#f6f6f6" : "white"}
+                        borderRight={
+                          cellIndex < row.getVisibleCells().length - 1
+                            ? "1px solid"
+                            : "none"
+                        }
+                        borderColor="gray.200"
+                        py={5}
+                        px={3}
+                        fontFamily={"AmsiProCond"}
+                        width={`${cell.column.getSize()}px`}
+                      >
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </Table.Cell>
+                    ))}
+                  </Table.Row>
+                ))}
+
+                {/* Loading more indicator */}
+                {hasMore && (
+                  <Table.Row>
+                    <Table.Cell colSpan={columns.length} p={6}>
+                      <Center>
+                        <Flex direction="column" align="center" gap={2}>
+                          <Text
+                            fontFamily={"AmsiProCond"}
+                            color="gray.500"
+                            fontSize="sm"
+                          >
+                            Desplázate hacia abajo para cargar más...
+                          </Text>
+                        </Flex>
+                      </Center>
                     </Table.Cell>
-                  ))}
-                </Table.Row>
-              ))
+                  </Table.Row>
+                )}
+
+                {/* No more results */}
+                {!hasMore && data.length > 0 && (
+                  <Table.Row>
+                    <Table.Cell colSpan={columns.length} p={6}>
+                      <Center>
+                        <Text fontFamily={"AmsiProCond"} color="gray.500">
+                          ✓ No hay más resultados
+                        </Text>
+                      </Center>
+                    </Table.Cell>
+                  </Table.Row>
+                )}
+              </>
             ) : (
               <Table.Row>
                 <Table.Cell
@@ -352,24 +434,6 @@ export function DynamicTable<TData>({
               </Table.Row>
             )}
           </Table.Body>
-
-          {/* Footer - No borders */}
-          {showPagination && (
-            <Table.Footer className="bg-[#ebebeb]">
-              <Table.Row>
-                <Table.Cell
-                  colSpan={columns.length}
-                  className="px-4 py-2"
-                  border="none"
-                  fontFamily={"AmsiProCond"}
-                >
-                  <Center justifyContent={"end"} mt={4}>
-                    {/* Pagination remains the same */}
-                  </Center>
-                </Table.Cell>
-              </Table.Row>
-            </Table.Footer>
-          )}
         </Table.Root>
       </Box>
     </Box>

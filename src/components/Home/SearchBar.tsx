@@ -20,7 +20,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
       <Container maxW={"container.xl"}>
         <InputGroup startElement={<RiSearch2Fill size={20} />}>
           <Input
-            placeholder="Search products..."
+            placeholder="Buscar productos..."
             rounded={"full"}
             bg={"white"}
             color={"#222"}

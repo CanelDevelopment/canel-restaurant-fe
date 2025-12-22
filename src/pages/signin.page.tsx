@@ -14,7 +14,7 @@ import { FaGoogle } from "react-icons/fa";
 import { RiWhatsappFill } from "react-icons/ri";
 import PhoneInput from "react-phone-input-2";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Offline } from "@/provider/offline";
 import { authClient } from "@/provider/user.provider";
 import toast from "react-hot-toast";
@@ -26,29 +26,77 @@ const Signin = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isOtpLoading, setIsOtpLoading] = useState(false);
 
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const redirectParam = searchParams.get("redirect");
+    if (redirectParam) {
+      console.log("💾 Saving redirect path to storage:", redirectParam);
+      localStorage.setItem("postLoginRedirect", redirectParam);
+    }
+  }, [searchParams]);
 
   const { data: sessionData, isPending: isSessionPending } =
     authClient.useSession();
 
+  const handleLoginSuccess = () => {
+    const storedRedirect = localStorage.getItem("postLoginRedirect");
+    const targetPath = storedRedirect || "/home";
+
+    if (window.location.pathname === targetPath) {
+      return;
+    }
+
+    // 3. CHANGE THIS: Use navigate instead of window.location.href
+    console.log("🚀 Navigating to:", targetPath);
+    navigate(targetPath);
+
+    // Clean up storage after redirect
+    localStorage.removeItem("postLoginRedirect");
+  };
+
   useEffect(() => {
     if (!isSessionPending && sessionData?.session) {
-      navigate("/home");
+      handleLoginSuccess();
     }
-  }, [sessionData, isSessionPending, navigate]);
+  }, [sessionData, isSessionPending]);
 
   const signInWithGoogle = async () => {
     setIsLoading(true);
-    await authClient.signIn.social({
-      provider: "google",
-      callbackURL: import.meta.env.VITE_FRONTEND_URL,
-    });
-    setIsLoading(false);
+
+    const frontendUrl = import.meta.env.VITE_FRONTEND_URL;
+
+    const storedRedirect =
+      localStorage.getItem("postLoginRedirect") ||
+      searchParams.get("redirect") ||
+      "";
+
+    const callbackUrl = storedRedirect
+      ? `${frontendUrl}${storedRedirect}`
+      : frontendUrl;
+
+    try {
+      const { data, error } = await authClient.signIn.social({
+        provider: "google",
+        callbackURL: callbackUrl,
+      });
+
+      if (data?.url) {
+        window.location.href = data.url;
+      } else if (error) {
+        console.error("Google Signin Error", error);
+      }
+    } catch (error) {
+      console.error("Google Signin Error", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSendOtp = async () => {
     if (phoneNumber.length < 10) {
-      toast.error("Please enter a valid phone number.", { icon: "⚠️" });
+      toast.error("Por favor ingresa un número de teléfono válido.");
       return;
     }
     setIsLoading(true);
@@ -57,44 +105,44 @@ const Signin = () => {
       {
         onSuccess: () => {
           setOtpSent(true);
-          toast.success("OTP sent successfully!");
+          toast.success("¡OTP enviado exitosamente!");
           setIsLoading(false);
         },
         onError: (ctx) => {
           toast.error(ctx.error.message);
-          console.log(ctx.error);
           setIsLoading(false);
         },
-        // onSettled: () => setIsOtpLoading(false),
       }
     );
   };
 
   const handleVerifyOtp = async () => {
     if (otp.length < 6) {
-      toast.error("Please enter the 6-digit OTP.");
+      toast.error("Por favor ingresa el código OTP de 6 dígitos.");
       return;
     }
 
     setIsOtpLoading(true);
 
-    // setIsLoading(true);
     await authClient.phoneNumber.verify(
       { phoneNumber: `+${phoneNumber}`, code: otp },
       {
         disableSession: false,
         updatePhoneNumber: true,
 
-        onSuccess: () => {
-          toast.success("Successfull");
+        onSuccess: (ctx) => {
+          toast.success("¡Éxito!");
+          console.log(ctx);
+          if (ctx.data?.token) {
+            localStorage.setItem("bearer_token", ctx.data.token);
+            console.log("💾 Token saved manually to localStorage");
+          }
           setIsOtpLoading(false);
-          // navigate("/home");
         },
         onError: (ctx) => {
           toast.error(ctx.error.message);
           setIsOtpLoading(false);
         },
-        // onSettled: () => setIsOtpLoading(false),
       }
     );
   };
@@ -114,7 +162,6 @@ const Signin = () => {
         bg="white"
         position={"relative"}
       >
-        {/* Left side (unchanged) */}
         <Box
           bgImage={"url(/locationbg.png)"}
           bgSize={"cover"}
@@ -143,7 +190,6 @@ const Signin = () => {
           minHeight={"100vh"}
           width={["100%", "100%"]}
         >
-          {/* Logo and header text (unchanged) */}
           <Image
             loading="lazy"
             src="/Logos/foterlogo.png"
@@ -180,9 +226,7 @@ const Signin = () => {
             </Text>
           </Box>
 
-          {/* --- FIX 1 & 3: Consolidated Input and Conditional OTP Field --- */}
           {!otpSent ? (
-            // SHOW PHONE INPUT
             <Box width="100%">
               <PhoneInput
                 country={"us"}
@@ -207,7 +251,6 @@ const Signin = () => {
               />
             </Box>
           ) : (
-            // SHOW OTP INPUT
             <Box width="100%">
               <Text mb={2} fontSize="sm">
                 Enter the 6-digit code sent to +{phoneNumber}
@@ -234,7 +277,7 @@ const Signin = () => {
             width="100%"
           >
             <Button
-              as="button" // Make it a button
+              as="button"
               onClick={otpSent ? handleVerifyOtp : handleSendOtp}
               disabled={isLoading || isOtpLoading}
               bgColor="#7a9f8a"
@@ -268,8 +311,7 @@ const Signin = () => {
                   />
                   <Text fontFamily={"AmsiProCond"} color={"#000"}>
                     o
-                  </Text>{" "}
-                  {/* Corrected "0" to "o" */}
+                  </Text>
                   <Box
                     as="span"
                     display="inline-block"

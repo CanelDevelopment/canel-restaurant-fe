@@ -25,8 +25,8 @@ export const Headingelevated: React.FC<elevatedheadingprop> = ({ title }) => {
           <Box px={[0, 0, 0]} position="relative">
             <Flex align="center">
               <Heading
-                fontSize={["2xl", "3xl", "5xl", "7xl"]}
-                color="Cgreen"
+                fontSize={["3xl", "3xl", "5xl", "7xl"]}
+                color="Cbutton"
                 px={[1, 6]}
                 fontFamily={"AmsiProCond-Black"}
               >
@@ -65,7 +65,7 @@ export const Headingelevated: React.FC<elevatedheadingprop> = ({ title }) => {
               ]}
               width={["33%", "33%", "44%"]}
               height="1px"
-              bg="#fff"
+              bg="Cbutton"
               opacity={0.6}
             />
           </Box>

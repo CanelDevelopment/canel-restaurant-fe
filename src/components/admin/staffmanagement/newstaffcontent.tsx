@@ -9,8 +9,6 @@ import {
   Separator,
   Text,
   VStack,
-  // Center,
-  // Spinner,
 } from "@chakra-ui/react";
 import type React from "react";
 import { authClient } from "@/provider/user.provider";
@@ -24,8 +22,8 @@ import { useMemo, useState } from "react";
 const frameworks = createListCollection({
   items: [
     { label: "Manager", value: "manager" },
-    { label: "Rider", value: "rider" },
-    { label: "Admin", value: "admin" },
+    { label: "Repartidor", value: "rider" },
+    { label: "Administrador", value: "admin" },
   ],
 });
 
@@ -43,9 +41,6 @@ type StaffFormValues = {
   status: boolean;
 };
 
-// const [showPassword, setShowPassword] = useState(false);
-// const handleShowClick = () => setShowPassword(!showPassword);
-
 async function onSubmit(values: StaffFormValues) {
   if (values.password !== values.confirmPassword) {
     toast.error("¡Las contraseñas no coinciden!");
@@ -53,7 +48,6 @@ async function onSubmit(values: StaffFormValues) {
   }
 
   let roleForAuth: CustomRole | undefined;
-
   switch (values.role) {
     case "admin":
       roleForAuth = "admin";
@@ -83,7 +77,6 @@ async function onSubmit(values: StaffFormValues) {
     },
     {
       onSuccess: async () => {
-        // console.log(ctx);
         toast.success("Personal creado exitosamente");
         await authClient.emailOtp.sendVerificationOtp({
           email: values.email,
@@ -96,8 +89,6 @@ async function onSubmit(values: StaffFormValues) {
       },
     }
   );
-
-  // console.log("Personal creado:", newStaff);
 }
 
 export const AddNewStaffContent: React.FC = () => {
@@ -106,13 +97,6 @@ export const AddNewStaffContent: React.FC = () => {
       status: true,
     },
   });
-
-  // --- FIX #2: Watch the boolean value and derive the display label and select value ---
-  // const currentStatusBoolean = watch("status");
-  // const currentStatusLabel = currentStatusBoolean ? "Activo" : "Inactivo";
-  // const currentStatusString = currentStatusBoolean ? "active" : "inactive";
-
-  // const [phoneNumber, setPhoneNumber] = useState("");
 
   const [showPassword, setShowPassword] = useState(false);
   const handleShowClick = () => setShowPassword(!showPassword);
@@ -125,9 +109,7 @@ export const AddNewStaffContent: React.FC = () => {
   const availableBranches = useMemo(() => {
     if (!user || !allBranches) return [];
 
-    if (user.role.toLowerCase() === "admin") {
-      return allBranches;
-    }
+    if (user.role.toLowerCase() === "admin") return allBranches;
 
     if (user.role.toLowerCase() === "manager" && user.id) {
       const assignedBranch = allBranches.find(
@@ -142,7 +124,13 @@ export const AddNewStaffContent: React.FC = () => {
   const branchOptions = createListCollection({
     items: [
       ...(user && user.role.toLowerCase() === "admin"
-        ? [{ key: "all", textValue: "All Branches", children: "All Branches" }]
+        ? [
+            {
+              key: "all",
+              textValue: " Sucursales",
+              children: " Sucursales",
+            },
+          ]
         : []),
       ...(availableBranches?.map((branch) => ({
         key: branch.id,
@@ -154,109 +142,23 @@ export const AddNewStaffContent: React.FC = () => {
 
   return (
     <Box>
-      {/* <Center
-        gap={4}
-        alignItems={["start", "start", "center", "center"]}
-        justifyContent={"space-between"}
-        px={[3, 5, 5, 10]}
-        py={7}
-        flexDirection={["column", "column", "row"]}
-        bgColor={"#FFF"}
-      >
-        <Flex
-          gapY={4}
-          flexWrap={["wrap", "nowrap"]}
-          justifyContent={"space-between"}
-          w={"full"}
-        >
-          <Flex gapX={4}>
-            <Button
-              fontFamily={"AmsiProCond"}
-              bgColor={"Cgreen"}
-              color={"Cbutton"}
-              rounded={"md"}
-              fontSize={"md"}
-            >
-              <FaPlus />
-              Añadir Nuevo
-            </Button>
-
-            <Button bgColor={"#000"} color={"#fff"} fontFamily={"AmsiProCond"}>
-              <IoListOutline />
-              Lista
-            </Button>
-          </Flex>
-
-          <Flex alignItems={"center"} gapX={5}>
-            <Text color={"#000"}>Estado</Text>
-
-            <Box w={"full"}>
-              <Select.Root
-                w={["60vw", "20vw", "40vw", "10vw"]}
-                collection={statusCollection}
-                value={[currentStatusString]} // Display the current status
-                onValueChange={(details) => {
-                  if (details.value.length > 0) {
-                    // Convert the selected string ("active" / "inactive") to a boolean for the form state
-                    const selectedBoolean = details.value[0] === "active";
-                    setValue("status", selectedBoolean, {
-                      shouldValidate: true,
-                    });
-                  }
-                }}
-              >
-                <Select.HiddenSelect />
-                <Select.Control
-                  bgColor={"#f3f3f3"}
-                  borderRadius="md"
-                  cursor={"pointer"}
-                  _hover={{ borderColor: "gray.400" }}
-                  _focus={{
-                    borderColor: "green.400",
-                    boxShadow: "0 0 0 1px green.400",
-                  }}
-                >
-                  <Select.Trigger cursor={"pointer"} border="none">
-                    <Select.ValueText placeholder="Select Status" />
-                  </Select.Trigger>
-                  <Select.IndicatorGroup>
-                    <Select.Indicator />
-                  </Select.IndicatorGroup>
-                </Select.Control>
-                <Select.Positioner>
-                  <Select.Content bg="#fff" borderWidth="1px">
-                    {statusCollection.items.map((framework) => (
-                      <Select.Item item={framework} key={framework.value}>
-                        {framework.label}
-                        <Select.ItemIndicator />
-                      </Select.Item>
-                    ))}
-                  </Select.Content>
-                </Select.Positioner>
-              </Select.Root>
-            </Box>
-          </Flex>
-        </Flex>
-      </Center> */}
-
       <Separator opacity={0.1} />
 
       <Box bgColor={"#fff"}>
-        {/* Left side */}
         <Box w={["100%", "100%", "50%"]} px={[3, 5, 5, 10]} py={7}>
           <Box maxW="md">
             <VStack align="stretch" color={"#000"} spaceY={5}>
               {/* First Name */}
               <Flex flexDirection={["column", "row"]}>
                 <Text minW={"150px"} mb="1">
-                  Prénom
+                  Nombre
                 </Text>
                 <Input
                   border={"none"}
                   bgColor={"#F4F4F4"}
                   rounded={"lg"}
                   _placeholder={{ color: "#929292" }}
-                  placeholder="Ingrese el Prénom"
+                  placeholder="Ingrese el nombre"
                   {...register("firstName", { required: "Requerido" })}
                 />
               </Flex>
@@ -264,7 +166,7 @@ export const AddNewStaffContent: React.FC = () => {
               {/* Last Name */}
               <Flex flexDirection={["column", "row"]}>
                 <Text minW={"150px"} mb="1">
-                  Nom de famille
+                  Apellido
                 </Text>
                 <Input
                   border={"none"}
@@ -276,49 +178,31 @@ export const AddNewStaffContent: React.FC = () => {
                 />
               </Flex>
 
-              {/* Email Address */}
+              {/* Email */}
               <Flex flexDirection={["column", "row"]}>
                 <Text minW={"150px"} mb="1">
-                  Adresse email
+                  E-mail
                 </Text>
                 <Input
                   border={"none"}
                   bgColor={"#F4F4F4"}
                   rounded={"lg"}
                   _placeholder={{ color: "#929292" }}
-                  placeholder="Ingrese el adresse email"
+                  placeholder="Ingrese el E-mail"
                   type="email"
                   {...register("email", { required: "Requerido" })}
                 />
               </Flex>
 
-              {/* Phone Number */}
+              {/* Phone */}
               <Flex flexDirection={["column", "row"]}>
                 <Text minW={"150px"} mb="1">
                   Número de Teléfono
                 </Text>
-                {/* <Input
-                  border={"none"}
-                  bgColor={"#F4F4F4"}
-                  rounded={"lg"}
-                  _placeholder={{ color: "#929292" }}
-                  placeholder="+1"
-                  type="number"
-                  {...register("phone")}
-                /> */}
                 <PhoneInput
                   country={"us"}
-                  // value={phoneNumber}
-                  // onChange={(phone) => setPhoneNumber(phone)}
                   onlyCountries={["us", "ve", "pk"]}
                   countryCodeEditable={false}
-                  // inputStyle={{
-                  //   width: "100%",
-                  //   height: "48px",
-                  //   fontSize: "1rem",
-                  //   border: "1px solid #E2E8F0",
-                  //   borderRadius: "8px",
-                  // }}
                   buttonStyle={{
                     borderTopLeftRadius: "8px",
                     borderBottomLeftRadius: "8px",
@@ -329,17 +213,17 @@ export const AddNewStaffContent: React.FC = () => {
                 />
               </Flex>
 
-              {/* New Password */}
+              {/* Password */}
               <Flex flexDirection={["column", "row"]}>
                 <Text minW={"150px"} mb="1">
-                  Nouveau mot de passe
+                  Contraseña
                 </Text>
                 <Input
                   border={"none"}
                   bgColor={"#F4F4F4"}
                   rounded={"lg"}
                   _placeholder={{ color: "#929292" }}
-                  placeholder="Ingrese la Nouveau mot de passe"
+                  placeholder="Ingrese la contraseña"
                   {...register("password")}
                   type="password"
                 />
@@ -349,16 +233,15 @@ export const AddNewStaffContent: React.FC = () => {
               <Flex flexDirection={"column"}>
                 <Box display={"flex"} flexDirection={["column", "row"]}>
                   <Text minW={"150px"} mb="1">
-                    Confirmez le mot de passe
+                    Confirmar Contraseña
                   </Text>
                   <Input
                     border={"none"}
                     bgColor={"#F4F4F4"}
                     rounded={"lg"}
                     _placeholder={{ color: "#929292" }}
-                    placeholder="Confirme su mot de passe"
+                    placeholder="Confirme la contraseña"
                     {...register("confirmPassword")}
-                    // type="password"
                     type={showPassword ? "text" : "password"}
                   />
                 </Box>
@@ -373,10 +256,10 @@ export const AddNewStaffContent: React.FC = () => {
                 </Text>
               </Flex>
 
-              {/* Select Branch */}
+              {/* Branch */}
               <Flex flexDirection={["column", "row"]}>
                 <Text minW={"150px"} mb="1">
-                  Seleccionar Sucursal
+                  Sucursal
                 </Text>
                 <Select.Root
                   collection={branchOptions}
@@ -414,7 +297,7 @@ export const AddNewStaffContent: React.FC = () => {
                 </Select.Root>
               </Flex>
 
-              {/* User Role */}
+              {/* Role */}
               <Flex flexDirection={["column", "row"]}>
                 <Text minW={"150px"} mb="1">
                   Rol de Usuario

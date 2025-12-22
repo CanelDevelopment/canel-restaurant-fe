@@ -23,7 +23,6 @@ type CustomerRow = {
   createdAt: string;
 };
 
-// This type now matches the one in the modal perfectly
 type SearchCriteria = {
   amountSpendCondition: string;
   amountSpendValue: string;
@@ -43,6 +42,10 @@ export const CustomerListContent: React.FC = () => {
   const { data: allOrders, isLoading: isLoadingOrders } = useFetchAllOrders();
   const { data: allUsers = [] } = useFetchAllUsers();
 
+  const [displayedData, setDisplayedData] = useState<CustomerRow[]>([]);
+  const [visibleCount, setVisibleCount] = useState(15);
+  const [hasMore, setHasMore] = useState(true);
+
   const handleBanToggle = async (userId: string, currentStatus: boolean) => {
     setUpdatingUserId(userId);
     const updater = (data: CustomerRow[]) =>
@@ -55,20 +58,20 @@ export const CustomerListContent: React.FC = () => {
     try {
       if (currentStatus) {
         await authClient.admin.unbanUser({ userId });
-        toast.success("User unbanned successfully!");
+        toast.success("¡Usuario desbloqueado exitosamente!");
       } else {
         await authClient.admin.banUser({ userId });
-        toast.success("User banned successfully!");
+        toast.success("¡Usuario bloqueado exitosamente!");
       }
     } catch (err) {
-      toast.error("Failed to update user status.");
+      toast.error("Error al actualizar el estado del usuario.");
       const reverter = (data: CustomerRow[]) =>
         data.map((user) =>
           user.id === userId ? { ...user, blacklist: currentStatus } : user
         );
       setMasterCustomerData(reverter);
       setFilteredCustomerData(reverter);
-      console.error("Failed to ban/unban user:", err);
+      console.error("Error al bloquear/desbloquear usuario:", err);
     } finally {
       setUpdatingUserId(null);
     }
@@ -83,12 +86,12 @@ export const CustomerListContent: React.FC = () => {
       user.ref,
       user.address,
       user.orderref,
-      user.blacklist ? "Yes" : "No",
+      user.blacklist ? "Sí" : "No",
     ]);
 
     const columns = [
       "Ref#",
-      "Nom",
+      "Nombre",
       "Contacto",
       "Artículos",
       "Sucursal",
@@ -97,8 +100,8 @@ export const CustomerListContent: React.FC = () => {
       "Estado",
     ];
     exportToPDF({
-      title: "Customer List",
-      filename: "customer_list.pdf",
+      title: "Lista de Clientes",
+      filename: "lista_clientes.pdf",
       columns: columns,
       data: exportData,
     });
@@ -106,12 +109,12 @@ export const CustomerListContent: React.FC = () => {
 
   const columns = [
     { accessorKey: "ref", header: "Ref#" },
-    { accessorKey: "name", header: "Nom" },
-    { accessorKey: "email", header: "Addresse Email" },
+    { accessorKey: "name", header: "Nombre" },
+    { accessorKey: "email", header: "E-mail" },
     { accessorKey: "contactnumber", header: "Número de Contacto" },
-    { accessorKey: "address", header: "Emplacement" },
+    { accessorKey: "address", header: "Dirección" },
     { accessorKey: "nooforders", header: "Nro. de Pedidos" },
-    { accessorKey: "orderref", header: "Total dépensé" },
+    { accessorKey: "orderref", header: "Total Gastado" },
     {
       accessorKey: "blacklist",
       header: "Lista Negra",
@@ -198,7 +201,7 @@ export const CustomerListContent: React.FC = () => {
         return {
           id: user.id,
           ref: user.id.slice(0, 6).toUpperCase(),
-          name: orderInfo?.fullName || user.fullName || "No Name Provided",
+          name: orderInfo?.fullName || user.fullName || "Sin Nombre",
           email: user.email,
           contactnumber:
             orderInfo?.phoneNumber ||
@@ -255,6 +258,23 @@ export const CustomerListContent: React.FC = () => {
     setFilteredCustomerData(filtered);
   };
 
+  useEffect(() => {
+    if (filteredCustomerData.length > 0) {
+      const initialData = filteredCustomerData.slice(0, 5);
+      setDisplayedData(initialData);
+      setVisibleCount(5);
+      setHasMore(filteredCustomerData.length > 5);
+    }
+  }, [filteredCustomerData]);
+
+  const handleLoadMore = () => {
+    const nextCount = visibleCount + 10;
+    const newData = filteredCustomerData.slice(0, nextCount);
+    setDisplayedData(newData);
+    setVisibleCount(nextCount);
+    setHasMore(nextCount < filteredCustomerData.length);
+  };
+
   return (
     <>
       <Box bgColor={"#FFF"}>
@@ -299,9 +319,11 @@ export const CustomerListContent: React.FC = () => {
         <DynamicTable
           showsimpleSearch={true}
           placeholderprops="Buscar"
-          data={filteredCustomerData}
+          data={displayedData}
           columns={columns}
           isLoading={isLoadingOrders}
+          hasMore={hasMore}
+          onLoadMore={handleLoadMore}
         />
       </Box>
     </>

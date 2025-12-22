@@ -53,7 +53,7 @@ export const PauseOrderModal = () => {
   const branchOptions = createListCollection({
     items: [
       ...(user && user.role.toLowerCase() === "admin"
-        ? [{ key: "all", textValue: "All Branches", children: "All Branches" }]
+        ? [{ key: "all", textValue: " Sucursales", children: " Sucursales" }]
         : []),
       ...(availableBranches?.map((branch) => ({
         key: branch.id,
@@ -67,14 +67,14 @@ export const PauseOrderModal = () => {
 
   const handlePause = () => {
     if (!selectedBranchId) {
-      toast.error("Please select a branch.");
+      toast.error("Por favor selecciona una sucursal.");
       return;
     }
 
-    let reason = `Paused for ${selectedDuration} minutes.`;
+    let reason = `Pausado por ${selectedDuration} minutos.`;
     if (selectedDuration === 0) {
       if (!customReason) {
-        toast.error("Please provide a reason for the custom pause.");
+        toast.error("Por favor proporciona una razón para la pausa personalizada.");
         return;
       }
       reason = customReason;
@@ -125,7 +125,7 @@ export const PauseOrderModal = () => {
                 color={"Cbutton"}
                 fontSize={"2xl"}
               >
-                Pause Ordering
+                Pausar Pedidos
               </Dialog.Title>
             </Dialog.Header>
 
@@ -139,7 +139,7 @@ export const PauseOrderModal = () => {
                       colorScheme={selectedDuration === min ? "green" : "gray"}
                       onClick={() => setSelectedDuration(min)}
                     >
-                      {min} min(s)
+                      {min} min
                     </Button>
                   ))}
                   <Button
@@ -147,13 +147,13 @@ export const PauseOrderModal = () => {
                     colorScheme={selectedDuration === 0 ? "green" : "gray"}
                     onClick={() => setSelectedDuration(0)}
                   >
-                    Other
+                    Otro
                   </Button>
                 </Grid>
 
                 {selectedDuration === 0 && (
                   <Textarea
-                    placeholder="Specify reason for pausing (e.g., Out of stock)"
+                    placeholder="Especifica la razón de la pausa (ej. Sin stock)"
                     value={customReason}
                     onChange={(e) => setCustomReason(e.target.value)}
                   />
@@ -203,7 +203,7 @@ export const PauseOrderModal = () => {
                     fontSize={"lg"}
                     pb={1}
                   >
-                    Confirm Pause
+                    Confirmar Pausa
                   </Button>
                 </HStack>
               </VStack>

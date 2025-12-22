@@ -19,8 +19,6 @@ import { authClient } from "@/provider/user.provider";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { PasswordInput } from "@/components/ui/password-input";
-// import { BsEyeSlashFill } from "react-icons/bs";
-// import { IoEyeSharp } from "react-icons/io5";
 
 type AdminSigninFormValues = {
   email: string;
@@ -36,36 +34,38 @@ export const AdminSigninForm = () => {
 
   const [rememberMeChecked, setRememberMeChecked] = useState(true);
 
-  // const [showPassword, setShowPassword] = useState(false);
-  // const handleShowClick = () => setShowPassword(!showPassword);
-
   const navigate = useNavigate();
 
   async function onLogin(values: AdminSigninFormValues) {
     try {
-      await authClient.signIn.email({
-        email: values.email,
-        password: values.password,
-        rememberMe: rememberMeChecked,
-      }, {
-        onSuccess: (ctx) => {
-          const token = ctx.response.headers.get("set-auth-token");
-          if (token) {
-            localStorage.setItem("bearer_token", token);
-          }
+      await authClient.signIn.email(
+        {
+          email: values.email,
+          password: values.password,
+          rememberMe: rememberMeChecked,
+        },
+        {
+          onSuccess: (ctx) => {
+            const token = ctx.response.headers.get("set-auth-token");
+            if (token) {
+              localStorage.setItem("bearer_token", token);
+            }
+          },
         }
-      });
+      );
 
       const session = await authClient.getSession();
-      console.log("This is session", session)
+      console.log("This is session", session);
       if (session?.data?.user?.role === "user") {
-        toast.error("You do not have admin access.");
+        toast.error("No tienes acceso de administrador.");
         return;
       }
       navigate("/dashboard");
     } catch (error) {
       console.error("Login Error:", error);
-      toast.error("Invalid email or password. Please try again.");
+      toast.error(
+        "E-mail o contraseña inválidos. Inténtalo de nuevo."
+      );
     }
   }
 
@@ -98,7 +98,7 @@ export const AdminSigninForm = () => {
             fontSize="4xl"
             mb={2}
           >
-            Sig
+            Iniciar
             <Center
               fontFamily={"AmsiProCond-Black"}
               paddingRight={1}
@@ -107,12 +107,11 @@ export const AdminSigninForm = () => {
               height={"60px"}
               color={"white"}
             >
-              <Text>n</Text>
-              <Text>In</Text>
+              <span>sesión</span>
             </Center>
           </Text>
           <Text fontFamily={"AmsiProCond"} fontSize="md" color="black" mb={6}>
-            Sign into your account
+            Inicia sesión para continuar
           </Text>
         </Flex>
 
@@ -124,7 +123,7 @@ export const AdminSigninForm = () => {
                 htmlFor="name"
                 fontFamily={"AmsiProCond"}
               >
-                Email
+                E-mail
               </FormLabel>
               <Input
                 border={"none"}
@@ -136,12 +135,12 @@ export const AdminSigninForm = () => {
                   color: "black/60",
                   fontSize: "14px",
                 }}
-                placeholder="Email"
+                placeholder="E-mail"
                 {...register("email", {
-                  required: "Email is required",
+                  required: "El E-mail es obligatorio",
                   minLength: {
                     value: 4,
-                    message: "Minimum length should be 4",
+                    message: "La longitud mínima debe ser 4",
                   },
                 })}
               />
@@ -157,7 +156,7 @@ export const AdminSigninForm = () => {
                 fontSize={"sm"}
                 fontFamily={"AmsiProCond"}
               >
-                Password
+                Contraseña
               </FormLabel>
 
               <PasswordInput
@@ -169,16 +168,15 @@ export const AdminSigninForm = () => {
                   color: "black/60",
                   fontSize: "14px",
                 }}
-                placeholder="Enter your Password"
+                placeholder="Introduce tu contraseña"
                 {...register("password", {
-                  required: "Password is required",
+                  required: "La contraseña es obligatoria",
                   minLength: {
                     value: 4,
-                    message: "Minimum length should be 4",
+                    message: "La longitud mínima debe ser 4",
                   },
                 })}
               />
-
 
               <FormErrorMessage color={"red"} fontSize="12px" marginTop={2}>
                 {errors.password && errors.password.message}
@@ -209,7 +207,7 @@ export const AdminSigninForm = () => {
                 </Checkbox.Control>
                 <Checkbox.Label />
               </Checkbox.Root>
-              Remember
+              Recuérdame
             </Text>
             <Link to={"/forgot-password"}>
               <Text
@@ -219,7 +217,7 @@ export const AdminSigninForm = () => {
                 fontFamily={"AmsiProCond"}
                 _hover={{ cursor: "pointer", textDecoration: "underline" }}
               >
-                Forget Password
+                ¿Olvidaste tu contraseña?
               </Text>
             </Link>
           </Center>
@@ -237,7 +235,7 @@ export const AdminSigninForm = () => {
             <IconButton
               bg="Cbutton"
               mt={4}
-              aria-label="Login"
+              aria-label="Iniciar sesión"
               size="lg"
               width="100%"
               colorScheme="teal"
@@ -250,7 +248,7 @@ export const AdminSigninForm = () => {
                 fontFamily={"AmsiProCond"}
                 mb={1}
               >
-                Login
+                Iniciar sesión
               </Text>
             </IconButton>
           </Box>
@@ -269,10 +267,8 @@ export const AdminSigninForm = () => {
           fontSize={"xs"}
           className="text-xs text-gray-400 hover:text-black cursor-pointer"
         >
-          Privacy Policy
+          Política de privacidad
         </Text>
-
-    
       </Center>
     </Box>
   );

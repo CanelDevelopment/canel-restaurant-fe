@@ -10,7 +10,7 @@ const AddRole = () => {
         <DashLogoButtons />
 
         {/* Heading */}
-        <DashboardHeading title="ROL" />
+        <DashboardHeading title="ROLES" />
         <Box px={[0, 0, 8]} rounded={"none"}>
           <AddRoleContent />
         </Box>

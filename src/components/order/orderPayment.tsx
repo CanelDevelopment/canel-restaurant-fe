@@ -14,6 +14,11 @@ import {
   usePriceCalculations,
   type CalculationItem,
 } from "@/store/calculationStore";
+import {
+  getCoordinatesFromAddress,
+  getDeliveryPrice,
+  getDistanceInKm,
+} from "@/helper/calculationofdistance";
 
 interface ApiAddonItem {
   id: string;
@@ -32,6 +37,18 @@ interface OrderItem {
   price: number;
   discount: number;
   orderAddons: OrderAddon[];
+  product?: {
+    id: string;
+    name: string;
+    categoryId?: string;
+    volumeDiscountRules?: any;
+    category?: {
+      id: string;
+      volumeDiscountRules?: any;
+    };
+  };
+  categoryId?: string;
+  volumeDiscountRules?: any;
 }
 
 export type TOrderType = "pickup" | "delivery";
@@ -40,7 +57,14 @@ interface OrderPaymentProps {
   order: {
     orderItems: OrderItem[];
     shippingFee?: number;
+    location?: string;
+    branch?: {
+      location: string;
+      deliveryRates?: any;
+      [key: string]: any;
+    };
   };
+
   orderType: TOrderType;
 }
 
@@ -48,38 +72,91 @@ export const OrderPayment: React.FC<OrderPaymentProps> = ({
   order,
   orderType,
 }) => {
-  const setItems = useCalculationStore((state) => state.setItems);
-  const setOrderType = useCalculationStore((state) => state.setOrderType);
-  const summary = usePriceCalculations();
-  console.log("payment summary", order);
-  useEffect(() => {
-    if (order && order.orderItems) {
-      const transformedItems: CalculationItem[] = order.orderItems.map(
-        (item, index) => ({
-          quantity: item.quantity,
-          selectedAddons: item.orderAddons.map((addon) => ({
-            quantity: addon.quantity,
-            addonItem: {
-              id: addon.addonItem.id,
-              name: addon.addonItem.name,
-              price: addon.addonItem.price,
-              discount: addon.addonItem.discount || 0,
-            },
-          })),
+  const { setItems, setDeliveryCost, setOrderType } = useCalculationStore();
 
-          product: {
-            id: `order-item-${index}`,
-            name: "Order Item",
-            price: item.price,
-            discount: item.discount,
-          },
-        })
+  const summary = usePriceCalculations();
+  const deliveryCost = useCalculationStore((state) => state.deliveryCost);
+
+  useEffect(() => {
+    const initializeOrder = async () => {
+      if (!order || !order.orderItems) return;
+
+      const transformedItems: CalculationItem[] = order.orderItems.map(
+        (item, index) => {
+          const categoryId =
+            item.categoryId ||
+            item.product?.categoryId ||
+            item.product?.category?.id;
+
+          const volumeDiscountRules =
+            item.volumeDiscountRules ||
+            item.product?.volumeDiscountRules ||
+            item.product?.category?.volumeDiscountRules;
+          console.log(item);
+          return {
+            quantity: item.quantity,
+            selectedAddons: item.orderAddons.map((addon) => ({
+              quantity: addon.quantity,
+              addonItem: {
+                id: addon.addonItem.id,
+                name: addon.addonItem.name,
+                price: addon.addonItem.price,
+                discount: addon.addonItem.discount || 0,
+              },
+            })),
+
+            product: {
+              id: `order-item-${index}`,
+              name: "Order Item",
+              price: item.price,
+              discount: item.discount,
+              categoryId,
+              volumeDiscountRules,
+            },
+          };
+        }
       );
 
       setItems(transformedItems);
       setOrderType(orderType);
-    }
-  }, [order, setItems, setOrderType]);
+
+      if (typeof order.shippingFee === "number" && order.shippingFee > 0) {
+        setDeliveryCost(order.shippingFee);
+        return;
+      }
+
+      if (orderType === "delivery" && order.branch && order.location) {
+        try {
+          const branchLocArray = JSON.parse(order.branch.location);
+          const warehouseLocation = {
+            lat: branchLocArray[0],
+            lng: branchLocArray[1],
+          };
+
+          // B. Geocode User Address (String -> {lat, lng})
+          const userLocation = await getCoordinatesFromAddress(order.location);
+
+          if (userLocation) {
+            // C. Get Distance
+            const distance = await getDistanceInKm(
+              warehouseLocation,
+              userLocation
+            );
+
+            const rates = (order.branch as any).deliveryRates || [];
+
+            const cost = getDeliveryPrice(distance, rates);
+
+            setDeliveryCost(cost);
+          }
+        } catch (error) {
+          console.error("Error calculating delivery cost:", error);
+        }
+      }
+    };
+
+    initializeOrder();
+  }, [order, orderType, setItems, setOrderType, setDeliveryCost]);
 
   return (
     <Box flex={1} px={[3, 10]} pt={12} pb={3} position="relative">
@@ -114,7 +191,7 @@ export const OrderPayment: React.FC<OrderPaymentProps> = ({
           fontSize="md"
         >
           <Text>Subtotal</Text>
-          <Text>REF {summary.subtotal.toFixed(2)}</Text>
+          <Text>REF {summary.subtotal}</Text>
         </Flex>
 
         {/* Discount (show percent + applied value) */}
@@ -132,7 +209,7 @@ export const OrderPayment: React.FC<OrderPaymentProps> = ({
         )}
 
         {/* Tax */}
-        <Flex
+        {/* <Flex
           justify="space-between"
           mb={2.5}
           fontFamily="AmsiProCond"
@@ -140,10 +217,10 @@ export const OrderPayment: React.FC<OrderPaymentProps> = ({
         >
           <Text>I.V.A (10%)</Text>
           <Text>REF {summary.tax.toFixed(2)}</Text>
-        </Flex>
+        </Flex> */}
 
         {/* Shipping Fee */}
-        {summary.shippingCost > 0 && (
+        {deliveryCost > 0 && (
           <Flex
             justify="space-between"
             mb={2.5}
@@ -151,7 +228,7 @@ export const OrderPayment: React.FC<OrderPaymentProps> = ({
             fontSize="md"
           >
             <Text>Costo de envío</Text>
-            <Text>REF {summary.shippingCost.toFixed(2)}</Text>
+            <Text>REF {deliveryCost}</Text>
           </Flex>
         )}
 

@@ -7,43 +7,47 @@ import {
   Text,
   Textarea,
 } from "@chakra-ui/react";
-import React from "react";
+import React, { useMemo } from "react";
 import { FaLongArrowAltRight } from "react-icons/fa";
-import { useCartItems, useCartActions } from "@/store/cartStore";
+import { useCartItems, useRemoveFromCart } from "@/store/cartStore";
+import type { Branch } from "./posContent";
 
 interface POSCartProps {
   onPlaceOrder: () => void;
+  placePrintOrder: () => void;
   isPlacingOrder: boolean;
   changeRequest: string;
   onCommentChange: (comment: string) => void;
+  selectedBranch?: Branch;
 }
 
 export const POSCart: React.FC<POSCartProps> = ({
   onPlaceOrder,
+  placePrintOrder,
   isPlacingOrder,
   changeRequest,
   onCommentChange,
+  selectedBranch,
 }) => {
   const cartItems = useCartItems();
-  const { removeFromCart } = useCartActions();
+  const removeFromCart = useRemoveFromCart();
 
-  // --- Dynamic Calculations for Display ---
   const subtotal = cartItems.reduce(
     (acc, item) => acc + item.price * item.quantity,
     0
   );
 
-  console.log(subtotal);
-
-  const taxRate = 0.1; // 15%
-  const tax = subtotal * taxRate;
-  // Note: These would become dynamic if needed by adding them to the parent state
   const discount = 0;
-  const deliveryFee = subtotal > 0 ? 3.99 : 0;
-  const grandTotal = subtotal + tax + deliveryFee - discount;
+  const deliveryFee = useMemo(() => {
+    if (subtotal === 0 || !selectedBranch) {
+      return 0;
+    }
+    console.log("selectedBranch");
 
-  // The local handlePlaceOrder function has been REMOVED.
-  // We now use the `onPlaceOrder` function passed down as a prop.
+    return selectedBranch.deliveryRate ?? 0;
+  }, [subtotal, selectedBranch]);
+
+  const grandTotal = subtotal + deliveryFee - discount;
 
   return (
     <Box
@@ -59,10 +63,10 @@ export const POSCart: React.FC<POSCartProps> = ({
         </Text>
       </Box>
 
-      {/* Dynamic Cart Items List */}
+      {/* Lista dinámica de artículos del carrito */}
       <Box flex="1" overflowY="auto" px={8}>
         {cartItems.length === 0 ? (
-          <Text color="gray.500">El carrito esta vacío.</Text>
+          <Text color="gray.500">El carrito está vacío.</Text>
         ) : (
           cartItems.map((item) => (
             <Box key={item.id} mb={4}>
@@ -80,7 +84,7 @@ export const POSCart: React.FC<POSCartProps> = ({
                   fontSize={"md"}
                   fontFamily={"AmsiProCond"}
                 >
-                  REF {item.price.toFixed(2)}
+                  REF {item.price}
                 </Text>
               </Flex>
 
@@ -95,7 +99,7 @@ export const POSCart: React.FC<POSCartProps> = ({
                   cursor="pointer"
                   onClick={() => removeFromCart(item.id)}
                 >
-                  Supprimer
+                  Eliminar
                 </Text>
               </Flex>
             </Box>
@@ -103,13 +107,13 @@ export const POSCart: React.FC<POSCartProps> = ({
         )}
         <Separator w={"full"} opacity={0.9} mb={4} />
         <Box py={4} flexShrink={0}>
-          {/* This is now a controlled component, managed by the parent */}
+          {/* Comentarios controlados por el estado del padre */}
           <Textarea
             bgColor={"#F4F4F4"}
             border={"none"}
             rows={3}
             rounded={"md"}
-            placeholder="Comentarios e Instrucciones"
+            placeholder="Comentarios e instrucciones"
             mb={4}
             value={changeRequest}
             onChange={(e) => onCommentChange(e.target.value)}
@@ -117,23 +121,19 @@ export const POSCart: React.FC<POSCartProps> = ({
 
           <Box color={"#000"} fontSize={"xs"} spaceY={2}>
             <Flex justifyContent={"space-between"}>
-              <Text>Total</Text>
-              <Text>Ref {subtotal}</Text>
+              <Text>Subtotal</Text>
+              <Text>Ref {subtotal.toFixed(2)}</Text>
             </Flex>
             <Flex justifyContent={"space-between"}>
-              <Text>Impuesto 15%</Text>
-              <Text>Ref {tax.toFixed(2)}</Text>
-            </Flex>
-            <Flex justifyContent={"space-between"}>
-              <Text>Costo de Entrega</Text>
-              <Text>Ref {deliveryFee.toFixed(2)}</Text>
+              <Text>Costo de entrega</Text>
+              <Text>Ref {deliveryFee}</Text>
             </Flex>
             <Flex
               justifyContent={"space-between"}
               fontFamily={"AmsiProCond-Black"}
               mt={2}
             >
-              <Text>Total General</Text>
+              <Text>Total general</Text>
               <Text>Ref {grandTotal.toFixed(2)}</Text>
             </Flex>
           </Box>
@@ -152,7 +152,27 @@ export const POSCart: React.FC<POSCartProps> = ({
             disabled={cartItems.length === 0 || isPlacingOrder}
           >
             <Text mb={1} as={"span"}>
-              Realizar Pedido
+              Realizar pedido
+            </Text>
+            <Icon as={FaLongArrowAltRight} size={"sm"} />
+          </Button>
+
+          <Button
+            w="full"
+            mt={3}
+            bgColor={"#38A169"}
+            color={"white"}
+            fontFamily={"AmsiProCond"}
+            letterSpacing={0.5}
+            display={"flex"}
+            alignItems={"center"}
+            justifyContent={"space-between"}
+            onClick={placePrintOrder}
+            disabled={cartItems.length === 0 || isPlacingOrder}
+            _hover={{ bgColor: "#2F855A" }}
+          >
+            <Text mb={1} as={"span"}>
+              Realizar y Imprimir
             </Text>
             <Icon as={FaLongArrowAltRight} size={"sm"} />
           </Button>

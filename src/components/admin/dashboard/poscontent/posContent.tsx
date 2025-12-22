@@ -1,4 +1,3 @@
-// Page: PosContent.tsx
 import {
   Box,
   Center,
@@ -6,17 +5,20 @@ import {
   createListCollection,
   Separator,
   Icon,
+  Text,
+  Flex,
 } from "@chakra-ui/react";
 import type React from "react";
 import { OrderType } from "./orderType";
 import { DeliveryForm } from "./deliveryForm";
 import { Menu } from "./menu";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useCartStore } from "@/store/cartStore";
 import toast from "react-hot-toast";
 import { useFetchBranch } from "@/hooks/branch/usefetchbranch";
 import { IoIosArrowDown } from "react-icons/io";
 import { useCreatePOSOrder } from "@/hooks/order/usecreateposorder";
+import { useReactToPrint } from "react-to-print";
 
 export interface Branch {
   id: string;
@@ -27,6 +29,7 @@ export interface Branch {
     name: string;
   };
   [key: string]: any;
+  deliveryRate: number;
 }
 
 export interface PosOrderInfo {
@@ -50,7 +53,7 @@ export const PosContent: React.FC = () => {
   const [selectedBranchId, setSelectedBranchId] = useState<string>("all");
 
   const collection = useMemo(() => {
-    const defaultOption = { label: "Todas las Sucursales", value: "all" };
+    const defaultOption = { label: " Sucursales", value: "all" };
     const branchOptions = (branches ?? []).map((branch) => ({
       label: branch.name,
       value: branch.id,
@@ -67,6 +70,14 @@ export const PosContent: React.FC = () => {
     return branches.find((branch) => branch.id === selectedBranchId);
   }, [selectedBranchId, branches]);
 
+  // Handle print!!!
+  const printRef = useRef<HTMLDivElement>(null);
+
+  const handlePrint = useReactToPrint({
+    contentRef: printRef,
+    documentTitle: "POS Receipt",
+  });
+
   const [orderType, setOrderType] = useState("delivery");
   const [orderInfo, setOrderInfo] = useState<PosOrderInfo>({
     name: "",
@@ -82,7 +93,7 @@ export const PosContent: React.FC = () => {
 
   const { mutate, isPending: isPlacingOrder } = useCreatePOSOrder();
   const cartItems = useCartStore((state) => state.cart);
-  const clearCart = useCartStore((state) => state.actions.clearCart);
+  const clearCart = useCartStore((state) => state.clearCart);
 
   const handleInfoChange = (field: keyof PosOrderInfo, value: string) => {
     setOrderInfo((prevState) => ({
@@ -149,6 +160,78 @@ export const PosContent: React.FC = () => {
         });
         clearCart();
         setSelectedBranchId("all");
+        handlePrint();
+      },
+      onError: (error) => {
+        console.error("Failed to create order:", error);
+        const errorMessage =
+          error?.response?.data?.message ||
+          error.message ||
+          "An unknown error occurred.";
+        toast.error(`Order Failed: ${errorMessage}`);
+      },
+    });
+  };
+
+  const handlePrintAndPlaceOrder = () => {
+    if (cartItems.length === 0) {
+      toast.error("Your cart is empty.");
+      return;
+    }
+
+    if (selectedBranchId === "all") {
+      toast.error("Please select a specific branch to place the order.");
+      return;
+    }
+
+    if (
+      !orderInfo.name.trim() ||
+      !orderInfo.phoneNumber.trim() ||
+      !orderInfo.location.trim()
+    ) {
+      toast.error("Please fill in Customer Name, Phone, and Full Address.");
+      return;
+    }
+
+    if (selectedBranch && (!orderInfo.city || !orderInfo.area)) {
+      toast.error("Please select a City and Area for delivery.");
+      return;
+    }
+    const parsedPhoneNumber = parseInt(orderInfo.phoneNumber, 10);
+    if (isNaN(parsedPhoneNumber)) {
+      toast.error("Please enter a valid phone number.");
+      return;
+    }
+    const payload = {
+      ...orderInfo,
+      branchId: selectedBranchId,
+      phoneNumber: parsedPhoneNumber,
+      type: orderType,
+      items: cartItems.map((item) => ({
+        productId: item.id,
+        productName: item.name,
+        quantity: item.quantity,
+        price: item.price,
+      })),
+    };
+    console.log(payload);
+    mutate(payload, {
+      onSuccess: () => {
+        toast.success("Order placed successfully!");
+        setOrderInfo({
+          name: "",
+          location: "",
+          phoneNumber: "",
+          rif: "",
+          nearestLandmark: "",
+          email: "",
+          changeRequest: "",
+          city: "",
+          area: "",
+        });
+        clearCart();
+        setSelectedBranchId("all");
+        handlePrint();
       },
       onError: (error) => {
         console.error("Failed to create order:", error);
@@ -242,13 +325,42 @@ export const PosContent: React.FC = () => {
       />
       <Separator opacity={0.2} />
       <Menu
+        selectedBranch={selectedBranch}
         onPlaceOrder={handlePlaceOrder}
+        placePrintOrder={handlePrintAndPlaceOrder}
         isPlacingOrder={isPlacingOrder}
         changeRequest={orderInfo.changeRequest}
         onCommentChange={(comment) =>
           handleInfoChange("changeRequest", comment)
         }
       />
+
+      <div style={{ display: "none" }} className="w-full">
+        <div ref={printRef} className="text-center w-full">
+          <h2 style={{ textAlign: "center" }}>POS Receipt</h2>
+          <Separator />
+          {cartItems.map((item) => (
+            <div key={item.id}>
+              <p>{item.name}</p>
+              <p>
+                {item.quantity} × {item.price} ={" "}
+                {(item.price * item.quantity).toFixed(2)}
+              </p>
+            </div>
+          ))}
+          <Separator />
+          <Flex justify="space-between">
+            <Text>Subtotal:</Text>
+            <Text>
+              {cartItems
+                .reduce((a, i) => a + i.price * i.quantity, 0)
+                .toFixed(2)}
+            </Text>
+          </Flex>
+          <p>--------------------------------------</p>
+          <p>Gracias por su compra</p>
+        </div>
+      </div>
     </>
   );
 };

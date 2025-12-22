@@ -2,7 +2,6 @@ import React from "react";
 import {
   Box,
   Container,
-  Image,
   SimpleGrid,
   Spinner,
   Center,
@@ -10,14 +9,18 @@ import {
 } from "@chakra-ui/react";
 import { Headingelevated } from "@/components/Home/Headingelevated";
 import { SolidCard } from "@/components/Home/SolidCard";
+import type { ProductVariant } from "./Elevatedcard";
+import marble from "/Background/marble.jpeg";
 
-// Define a type for the products it will receive
 type Product = {
   id: string;
   name: string;
   description: string;
   price: number;
   image: string;
+  discount: number;
+  addonItemIds: string[] | null;
+  variants: ProductVariant[] | null;
 };
 
 // Define types for the component's props
@@ -44,7 +47,8 @@ export const HomeFavorites: React.FC<HomeFavoritesProps> = ({
     if (error) {
       return (
         <Center minH="40vh">
-          <Text color="red.300">Could not load favorites.</Text>
+          {/* Translated Text */}
+          <Text color="red.300">No se pudieron cargar los favoritos.</Text>
         </Center>
       );
     }
@@ -53,8 +57,8 @@ export const HomeFavorites: React.FC<HomeFavoritesProps> = ({
     if (!products || products.length === 0) {
       return (
         <Center minH="40vh">
-          <Text fontFamily="AmsiProCond" fontSize="xl" color="whiteAlpha.800">
-            No items found.
+          <Text fontFamily="AmsiProCond" fontSize="xl" color="Cbutton">
+            No se encontraron artículos.
           </Text>
         </Center>
       );
@@ -71,11 +75,16 @@ export const HomeFavorites: React.FC<HomeFavoritesProps> = ({
           {products.map((product) => (
             <SolidCard
               key={product.id}
+              id={product.id}
+              discount={product.discount}
+              addonItemIds={product.addonItemIds}
               imageSource={product.image}
               title={product.name.toUpperCase()}
-              price={`REF ${product.price}`}
+              price={String(product.price)}
               description={product.description}
-              imageSize="70%"
+              variants={product.variants}
+
+              // imageSize="70%"
             />
           ))}
         </SimpleGrid>
@@ -85,16 +94,18 @@ export const HomeFavorites: React.FC<HomeFavoritesProps> = ({
 
   return (
     <Box
-      bg={["Cbutton"]}
+      // bg={"#f3f3f3"}
+      bg={`url(${marble})`}
       bgRepeat="no-repeat"
       bgPos="center"
       bgSize="cover"
       width="full"
-      minHeight="100vh"
+      // minHeight="90vh"
       position="relative"
+      id="los-favoritos"
     >
       {/* Decorative elements remain the same */}
-      <Box
+      {/* <Box
         bg={"url(/Background/designElement4.png)"}
         bgRepeat={"no-repeat"}
         width={["25%", "7%"]}
@@ -115,7 +126,7 @@ export const HomeFavorites: React.FC<HomeFavoritesProps> = ({
       </Box>
       <Box position={"absolute"} bottom={96} left={44}>
         <Image src="/Background/designElement-tulip.png" w={"74%"} />
-      </Box>
+      </Box> */}
 
       {/* The SearchBar has been removed from here */}
       <Container maxW={"container.xl"}>{renderContent()}</Container>

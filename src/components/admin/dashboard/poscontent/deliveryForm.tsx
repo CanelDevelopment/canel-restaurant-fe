@@ -1,4 +1,3 @@
-// Component: DeliveryForm.tsx
 import {
   Box,
   Center,
@@ -86,7 +85,7 @@ export const DeliveryForm: React.FC<DeliveryFormProps> = ({
         >
           <Input
             name="phoneNumber"
-            placeholder="Enter Phone Number"
+            placeholder="Ingrese Número de Teléfono"
             value={orderInfo.phoneNumber}
             onChange={handleChange}
             py={6}
@@ -96,7 +95,7 @@ export const DeliveryForm: React.FC<DeliveryFormProps> = ({
           />
           <Input
             name="name"
-            placeholder="Customer Name"
+            placeholder="Nombre del Cliente"
             value={orderInfo.name}
             onChange={handleChange}
             py={6}
@@ -107,7 +106,7 @@ export const DeliveryForm: React.FC<DeliveryFormProps> = ({
           <Input
             name="email"
             type="email"
-            placeholder="Customer Email Address"
+            placeholder="E-mail del Cliente"
             value={orderInfo.email}
             onChange={handleChange}
             py={6}
@@ -125,7 +124,7 @@ export const DeliveryForm: React.FC<DeliveryFormProps> = ({
           px={[6, 6, 7, 8]}
           fontSize={"xl"}
         >
-          Adresse de livraison
+          Dirección
         </Text>
       </Box>
 
@@ -150,7 +149,7 @@ export const DeliveryForm: React.FC<DeliveryFormProps> = ({
         >
           <Input
             name="location"
-            placeholder="Full Address"
+            placeholder="Dirección Completa"
             value={orderInfo.location}
             onChange={handleChange}
             py={6}
@@ -160,7 +159,7 @@ export const DeliveryForm: React.FC<DeliveryFormProps> = ({
           />
           <Input
             name="nearestLandmark"
-            placeholder="Near Land Mark"
+            placeholder="Cerca de un Punto de Referencia"
             value={orderInfo.nearestLandmark}
             onChange={handleChange}
             py={6}
@@ -170,7 +169,6 @@ export const DeliveryForm: React.FC<DeliveryFormProps> = ({
           />
 
           {/* DYNAMIC AREA SELECT */}
-          {/* *** FIX: Changed onSelectionChange to onValueChange *** */}
           <Select.Root
             collection={areaOptions}
             size="lg"
@@ -186,7 +184,7 @@ export const DeliveryForm: React.FC<DeliveryFormProps> = ({
                 py={3.2}
                 px={5}
               >
-                <Select.ValueText placeholder="Select Area" />
+                <Select.ValueText placeholder="Seleccionar Área" />
                 <Select.IndicatorGroup>
                   <Icon as={IoIosArrowDown} />
                 </Select.IndicatorGroup>
@@ -213,7 +211,6 @@ export const DeliveryForm: React.FC<DeliveryFormProps> = ({
 
         {/* DYNAMIC CITY SELECT */}
         <Box px={6} w={["full", "full", "35%"]} fontFamily={"AmsiProCond"}>
-          {/* *** FIX: Changed onSelectionChange to onValueChange *** */}
           <Select.Root
             collection={cityOptions}
             size="lg"
@@ -229,7 +226,7 @@ export const DeliveryForm: React.FC<DeliveryFormProps> = ({
                 py={3.2}
                 px={5}
               >
-                <Select.ValueText placeholder="City" />
+                <Select.ValueText placeholder="Ciudad" />
                 <Select.IndicatorGroup>
                   <Icon as={IoIosArrowDown} />
                 </Select.IndicatorGroup>

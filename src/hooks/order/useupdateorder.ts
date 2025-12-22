@@ -31,7 +31,7 @@ export const useUpdateOrder = () => {
     },
 
     onSuccess: (data, variables) => {
-      toast.success(data.message || "Order updated successfully!");
+      toast.success(data.message || "¡Pedido actualizado con éxito!");
 
       queryClient.invalidateQueries({ queryKey: ["all-orders"] });
 
@@ -39,7 +39,7 @@ export const useUpdateOrder = () => {
     },
 
     onError: (error) => {
-      toast.error(error.message || "Failed to update the order.");
+      toast.error(error.message || "Error al actualizar el pedido.");
       console.error("Error updating order:", error);
     },
   });

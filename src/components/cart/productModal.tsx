@@ -8,12 +8,18 @@ import {
   Heading,
   Spacer,
   Icon,
+  Button,
 } from "@chakra-ui/react";
 import { Counter } from "../common/counter";
 import { RiArrowRightFill } from "react-icons/ri";
 import { FaXmark } from "react-icons/fa6";
+import toast from "react-hot-toast";
 // import toast from "react-hot-toast";
 
+interface ProductVariant {
+  name: string;
+  price: string;
+}
 interface ProductModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -21,7 +27,12 @@ interface ProductModalProps {
   title: string;
   price: string;
   description: string;
-  onAddToCart: (quantity: number, notes: string) => void;
+  variants: ProductVariant[] | null;
+  onAddToCart: (
+    quantity: number,
+    notes: string,
+    selectedVariant: ProductVariant
+  ) => void;
 }
 
 export const ProductModal: React.FC<ProductModalProps> = ({
@@ -32,30 +43,45 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   price,
   description,
   onAddToCart,
+  variants,
 }) => {
   const [quantity, setQuantity] = useState(1);
   const [notes, setNotes] = useState("");
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(
+    null
+  );
 
   useEffect(() => {
-    if (isOpen) {
-      const originalStyle = window.getComputedStyle(document.body).overflow;
-      document.body.style.overflow = "hidden";
-      return () => {
-        document.body.style.overflow = originalStyle;
-      };
+    if (!isOpen) return;
+
+    const originalStyle = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const safeVariants = Array.isArray(variants) ? variants : [];
+
+    if (safeVariants.length > 0) {
+      setSelectedVariant(safeVariants[0]);
+    } else {
+      setSelectedVariant(null);
     }
-  }, [isOpen]);
+
+    return () => {
+      document.body.style.overflow = originalStyle;
+    };
+  }, [isOpen, variants]);
 
   if (!isOpen) return null;
 
   const handleAdd = () => {
-    onAddToCart(quantity, notes);
+    onAddToCart(quantity, notes, selectedVariant!);
+    toast.success("¡Artículo agregado al carrito!");
     onClose();
     setQuantity(1);
     setNotes("");
   };
 
-  console.log();
+  const displayPrice = selectedVariant ? selectedVariant.price : price;
+
   return (
     <>
       {/* Backdrop */}
@@ -79,7 +105,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         maxW={{ base: "95%", sm: "500px", md: "800px" }}
         maxH={{ base: "90vh", md: "800px" }}
         w="full"
-        h={{ base: "90vh", md: "55%" }}
+        h={{ base: "90vh", md: "65%" }}
         position="fixed"
         top="50%"
         left="50%"
@@ -114,7 +140,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
 
           <Box px={{ base: 2, md: 0 }}>
             <Text
-              fontSize={{ base: "xs", sm: "sm", md: "sm" }}
+              fontSize={{ base: "sm", sm: "sm", md: "md" }}
               lineHeight="shorter"
               letterSpacing={"0.7px"}
               color="#000"
@@ -139,7 +165,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
             <Flex justify="space-between" align="start" mb={2}>
               {/* Inside Right Section: Replace Static Title and Price */}
               <Heading
-                fontSize={{ base: "xl", md: "40px" }}
+                fontSize={{ base: "2xl", md: "40px" }}
                 fontWeight="bold"
                 color="Cbutton"
                 as="h2"
@@ -168,14 +194,71 @@ export const ProductModal: React.FC<ProductModalProps> = ({
               mt={2}
               gap={5}
               align="center"
-              fontSize={{ base: "md", md: "22px" }}
+              fontSize={{ base: "lg", md: "22px" }}
               fontFamily="AmsiProCond-Bold"
+              color="Cbutton"
             >
-              <Text color="Cgreen">REF {price}</Text>
+              <Text>REF {displayPrice}</Text>
             </Flex>
 
+            {variants && variants.length > 0 && (
+              <Box mt={{ base: 3, md: 5 }}>
+                <Text
+                  fontSize="md"
+                  fontFamily="AmsiProCond"
+                  color="#000"
+                  mb={2}
+                  fontWeight="bold"
+                >
+                  Elige una opción:
+                </Text>
+                <Flex wrap="wrap" gap={2}>
+                  <Button
+                    onClick={() => setSelectedVariant(null)}
+                    size="sm"
+                    fontFamily="AmsiProCond"
+                    bg={selectedVariant === null ? "Cbutton" : "gray.200"}
+                    color={selectedVariant === null ? "white" : "black"}
+                    _hover={{
+                      bg: selectedVariant === null ? "Cbutton" : "gray.300",
+                    }}
+                  >
+                    Default
+                  </Button>
+                  {variants.map((variant) => (
+                    <Button
+                      key={variant.name}
+                      onClick={() => setSelectedVariant(variant)}
+                      size="sm"
+                      fontFamily="AmsiProCond"
+                      // Style the button differently if it's selected
+                      // isActive={selectedVariant?.name === variant.name}
+                      bg={
+                        selectedVariant?.name === variant.name
+                          ? "Cbutton"
+                          : "gray.200"
+                      }
+                      color={
+                        selectedVariant?.name === variant.name
+                          ? "white"
+                          : "black"
+                      }
+                      _hover={{
+                        bg:
+                          selectedVariant?.name === variant.name
+                            ? "Cbutton"
+                            : "gray.300",
+                      }}
+                    >
+                      {variant.name}
+                    </Button>
+                  ))}
+                </Flex>
+              </Box>
+            )}
+
             <Text
-              fontSize={{ base: "xs", sm: "xs", md: "md" }}
+              fontSize={{ base: "sm", sm: "sm", md: "md" }}
               letterSpacing={"0.7px"}
               fontFamily="AmsiProCond"
               color="#000"
@@ -190,7 +273,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Escriba su observación"
-                bg="#C4C4C4"
+                bg="#F5F5F5"
                 color="#000"
                 border="none"
                 rounded="md"
@@ -248,7 +331,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
             <Box
               bg="#fff"
               borderRadius="md"
-              _hover={{ bg: "green.500" }}
+              _hover={{ bg: "#fff", opacity: 0.5 }}
               display="flex"
               alignItems="center"
               justifyContent="center"
@@ -257,14 +340,14 @@ export const ProductModal: React.FC<ProductModalProps> = ({
               w={["100%", "80%", "80%"]}
               cursor="pointer"
               fontFamily="AmsiProCond"
-              fontSize={["10px", "md"]}
+              fontSize={["sm", "md"]}
               border="none"
               boxShadow="0 0 0 0.1px #EDEDED"
               textAlign="center"
               color="Black"
               onClick={handleAdd}
             >
-              REF {price}
+              <Text fontWeight={600}>REF {displayPrice}</Text>
               <Spacer />
               <Text mr={1}>Agregar al carrito</Text>
               <Icon as={RiArrowRightFill} color="Cbutton" />

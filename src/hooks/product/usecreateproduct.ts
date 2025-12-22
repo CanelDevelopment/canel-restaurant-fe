@@ -17,12 +17,12 @@ export const useAddProduct = () => {
     mutationKey: ["create product"],
     retry: false,
     onSuccess: (data) => {
-      toast.success("Product added successfully!");
+      toast.success("¡Producto agregado con éxito!");
       queryClient.invalidateQueries({ queryKey: ["fetch-product"] });
       console.log("Product added successfully:", data.message);
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || "Failed to add product");
+      toast.error(error.response?.data?.message || "Error al agregar el producto");
       console.error("Failed to add product:", error.message);
     },
   });

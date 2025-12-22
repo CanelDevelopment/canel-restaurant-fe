@@ -1,14 +1,21 @@
 import React from "react";
 import { CartNav } from "@/components/Home/CartNav";
 import { Box, Image } from "@chakra-ui/react";
+import { useFetchMainSection } from "@/hooks/branding/usefetchbranding";
 // import { TraditionalBox } from "./TraditionalNav";
 
 export const HeroSection: React.FC = () => {
+  const { data: mainImage } = useFetchMainSection();
+
   return (
     <Box
-      bgImage={`linear-gradient(to bottom, rgba(0,0,0,0.8), rgba(0,0,0,0.1)), url(/Background/hero.jpg)`}
+      bgImage={`linear-gradient(to bottom, rgba(0,0,0,0.8), rgba(0,0,0,0.1)), ${
+        mainImage?.mainSection
+          ? `url(${mainImage.mainSection})`
+          : "url(/Background/hero.jpg)"
+      }`}
       bgSize="cover"
-      bgPos={"center"}
+      bgPos={["left", "center"]}
       width="100%"
       minHeight="55vh"
       color="white"

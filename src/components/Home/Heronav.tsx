@@ -1,6 +1,6 @@
 import { useFetchCategories } from "@/hooks/category/usefetchcategory";
 import { Box, Text } from "@chakra-ui/react";
-import React, { useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
 
 export const Heronav: React.FC = () => {
@@ -14,7 +14,30 @@ export const Heronav: React.FC = () => {
   };
 
   const { data } = useFetchCategories();
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
+  useEffect(() => {
+    const handleScroll = () => {
+      let currentCategory: string | null = null;
+
+      data?.forEach((item) => {
+        const section = document.getElementById(
+          item.name.replace(/\s+/g, "-").toLowerCase()
+        );
+        if (section) {
+          const rect = section.getBoundingClientRect();
+          if (rect.top <= 100 && rect.bottom > 100) {
+            currentCategory = item.name;
+          }
+        }
+      });
+
+      setActiveCategory(currentCategory);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [data]);
   return (
     <Box
       px={[3, 10]}
@@ -52,7 +75,6 @@ export const Heronav: React.FC = () => {
           {data?.map((item) => (
             <Text
               key={item.id}
-              color="#3D3D3D"
               fontSize="lg"
               fontFamily={"AmsiProCond-Bold"}
               flexShrink={0}
@@ -63,6 +85,7 @@ export const Heronav: React.FC = () => {
                 );
                 section?.scrollIntoView({ behavior: "smooth" });
               }}
+              color={activeCategory === item.name ? "Cbutton" : "#3D3D3D"} // highlight active
             >
               {item.name}
             </Text>

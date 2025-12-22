@@ -2,13 +2,14 @@ import { DashboardHeading } from "@/components/admin/dashboard/dashboardHeading"
 import { DashLogoButtons } from "@/components/admin/dashboard/dashlogobuttons";
 import { DynamicTable } from "@/components/admin/table/dynamictable";
 import { Box, Checkbox, Button, Center, Text, Flex } from "@chakra-ui/react";
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react"; // Import useMemo
 import { Link } from "react-router-dom";
 import { FaPlus } from "react-icons/fa";
 import { useFetchBranch } from "@/hooks/branch/usefetchbranch";
 import { useDeleteBranch } from "@/hooks/branch/usedeletebranch";
 import { EditBranchModal } from "@/components/admin/branchmanagement/editbranchmodal";
 
+// Type for the data required by the edit modal
 type BranchDataForModal = {
   id: string;
   name: string;
@@ -18,30 +19,43 @@ type BranchDataForModal = {
   status: boolean;
   operatingHours: string;
   phoneNumber: string;
+  deliveryRates: { min: number; max: number; price: number }[];
+  orderType: string;
+  areas: string[];
 };
 
-// This type is for the data structure that the TABLE displays
+// Type for the structured data the table will display
 type BranchForTable = {
   id: string;
   branchName: string;
   location: string;
   manager: string;
-  status: "Activo" | "Inactivo";
+  // status: "Activo" | "Inactivo";
   operatingHours: string;
   contact: string;
   rawBranchData: BranchDataForModal;
 };
 
 const BranchManagement = () => {
+  // --- HOOKS ---
   const { data: branchData, isLoading, isError } = useFetchBranch();
   const { mutate: deleteBranch } = useDeleteBranch();
 
+  console.log("branchData", branchData);
+
+  // --- STATE ---
   const [isEditModalOpen, setEditModalOpen] = useState(false);
   const [selectedBranch, setSelectedBranch] =
     useState<BranchDataForModal | null>(null);
-  const [tableData, setTableData] = useState<BranchForTable[]>([]);
+
+  const [visibleCount, setVisibleCount] = useState(10);
+
+  const loadMore = () => {
+    setVisibleCount((prevCount) => prevCount + 10);
+  };
 
   const handleEditClick = (branch: BranchDataForModal) => {
+    console.log(branch);
     setSelectedBranch(branch);
     setEditModalOpen(true);
   };
@@ -56,42 +70,46 @@ const BranchManagement = () => {
       id: "select",
       header: ({ table }: { table: any }) => (
         <Checkbox.Root
-          checked={table.getIsAllPageRowsSelected()}
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          checked={table.getIsAllRowsSelected()}
+          onCheckedChange={(value) =>
+            table.toggleAllRowsSelected(!!value.checked)
+          }
           size={"lg"}
+          colorPalette={"green"}
         >
-          <Checkbox.HiddenInput />{" "}
+          <Checkbox.HiddenInput />
           <Checkbox.Control
             border={"0.5px solid #949494"}
             rounded={"md"}
             bgColor={"#F6F6F6"}
+            color={"Cbutton"}
           />
         </Checkbox.Root>
       ),
       cell: ({ row }: { row: any }) => (
         <Checkbox.Root
           checked={row.getIsSelected()}
-          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          onCheckedChange={(value) => row.toggleSelected(!!value.checked)}
           size={"lg"}
+          colorPalette={"green"}
         >
-          <Checkbox.HiddenInput />{" "}
+          <Checkbox.HiddenInput />
           <Checkbox.Control
             border={"0.5px solid #949494"}
             rounded={"md"}
             bgColor={"#F6F6F6"}
+            color={"Cbutton"}
           />
         </Checkbox.Root>
       ),
-      size: 20,
     },
     {
       accessorKey: "branchName",
-      header: "Nom",
+      header: "Nombre",
       cell: ({ row }: { row: any }) => (
         <div className="flex flex-col gap-1 group">
           <Text>{row.original.branchName}</Text>
           <div className="flex gap-2 text-sm invisible group-hover:visible transition-all duration-200">
-            {/* 5. Attach the edit handler to the "Editar" button */}
             <Text
               textDecoration={"underline"}
               color={"#4394D7"}
@@ -112,48 +130,46 @@ const BranchManagement = () => {
         </div>
       ),
     },
-    {
-      accessorKey: "location",
-      header: "Ubicación",
-      cell: ({ row }: { row: any }) => <Box>{row.original.location}</Box>,
-      size: 200,
-    },
+    { accessorKey: "location", header: "Ubicación" },
     { accessorKey: "manager", header: "Gerente" },
-    { accessorKey: "status", header: "Statut" },
-    { accessorKey: "operatingHours", header: "Horario de Operación" },
+    // { accessorKey: "status", header: "Estado" },
+    { accessorKey: "operatingHours", header: "Horario" },
     { accessorKey: "contact", header: "Contacto" },
   ];
 
-  useEffect(() => {
-    if (branchData) {
-      const mappedBranches: BranchForTable[] = branchData.map(
-        (branch: any) => ({
-          // This is the formatted data for display in the table
-          id: branch.id,
-          branchName: branch.name || "N/A",
-          location: `${branch.address || "Dirección no disponible"}, ${
-            branch.city?.name || ""
-          }`,
-          manager: branch.manager?.fullName || "No Asignado",
-          status: branch.status ? "Activo" : "Inactivo",
-          operatingHours: branch.operatingHours || "No especificado",
-          contact: branch.phoneNumber || "No disponible",
-          // This is the raw data that the Edit Modal needs
-          rawBranchData: {
-            id: branch.id,
-            name: branch.name,
-            address: branch.address,
-            cityId: branch.cityId,
-            managerId: branch.manager ? branch.manager.id : "",
-            status: branch.status,
-            operatingHours: branch.operatingHours,
-            phoneNumber: branch.phoneNumber,
-          },
-        })
-      );
-      setTableData(mappedBranches);
+  const tableData: BranchForTable[] = useMemo(() => {
+    if (!branchData) {
+      return [];
     }
-  }, [branchData]);
+
+    return branchData.slice(0, visibleCount).map((branch: any) => ({
+      id: branch.id,
+      branchName: branch.name || "N/A",
+      location: `${branch.address || "Dirección no disponible"}, ${
+        branch.city?.name || ""
+      }`,
+      manager: branch.manager?.fullName || "No asignado",
+      // status: branch.status ? "Activo" : "Inactivo",
+      operatingHours: branch.operatingHours || "No especificado",
+      contact: branch.phoneNumber || "No disponible",
+
+      rawBranchData: {
+        id: branch.id,
+        name: branch.name,
+        address: branch.address,
+        cityId: branch.cityId,
+        managerId: branch.manager ? branch.manager.id : "",
+        status: branch.status,
+        operatingHours: branch.operatingHours,
+        phoneNumber: branch.phoneNumber,
+        deliveryRates: branch.deliveryRates,
+        orderType: branch.orderType,
+        areas: branch.areas,
+      },
+    }));
+  }, [branchData, visibleCount]);
+
+  const hasMore = visibleCount < (branchData?.length || 0);
 
   return (
     <>
@@ -161,6 +177,7 @@ const BranchManagement = () => {
         <DashLogoButtons />
         <DashboardHeading title="GESTIÓN DE SUCURSALES" />
         <Box px={[0, 0, 8]} rounded={"none"}>
+          {/* This header section remains the same */}
           <Center
             gap={4}
             alignItems={["start", "start", "center", "center"]}
@@ -197,12 +214,13 @@ const BranchManagement = () => {
               data={tableData}
               columns={columns}
               isLoading={isLoading}
+              onLoadMore={loadMore}
+              hasMore={hasMore}
             />
           )}
         </Box>
       </Box>
 
-      {/* 6. Render the EditBranchModal and pass it the state and handlers */}
       <EditBranchModal
         isOpen={isEditModalOpen}
         onClose={handleCloseModal}

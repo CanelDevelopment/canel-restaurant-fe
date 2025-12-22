@@ -6,11 +6,6 @@ import {
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 
-// interface AssignedPermissionsData {
-//   userId: string;
-//   assignedPermissions: string[];
-// }
-
 interface AssignPermissionsFormData {
   userId: string;
   permissions: string[];
@@ -33,13 +28,12 @@ export const useAssignPermissions = () => {
     retry: false,
 
     onSuccess: (response) => {
-      toast.success(response.message || "Permissions updated successfully!");
-
+      toast.success(response.message || "¡Permisos actualizados con éxito!");
       queryClient.invalidateQueries({ queryKey: ["fetch-staff"] });
     },
 
     onError: (error) => {
-      toast.error(error.message || "Something went wrong!");
+      toast.error(error.message || "¡Algo salió mal!");
     },
   });
 };

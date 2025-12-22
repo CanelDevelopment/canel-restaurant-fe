@@ -22,14 +22,14 @@ export const useDeleteStaff = () => {
     mutationKey: ["delete-staff"],
 
     onSuccess: (data) => {
-      toast.success(data.message || "Staff member deleted successfully!");
+      toast.success(data.message || "¡Miembro del personal eliminado con éxito!");
       queryClient.invalidateQueries({ queryKey: ["fetch-staff"] });
     },
 
     onError: (error) => {
       console.log(error);
       const errorMessage =
-        error.response?.data?.message || "Failed to delete staff member.";
+        error.response?.data?.message || "Error al eliminar al miembro del personal.";
       toast.error(errorMessage);
     },
   });

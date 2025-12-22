@@ -26,7 +26,13 @@ import {
   calculateTotals,
   type CalculationItem,
 } from "@/store/calculationStore";
-import type { TOrderType } from "@/components/order/orderPayment";
+
+import { useFetchBranch } from "@/hooks/branch/usefetchbranch";
+import {
+  getCoordinatesFromAddress,
+  getDeliveryPrice,
+  getDistanceInKm,
+} from "@/helper/calculationofdistance";
 
 export interface TableData {
   ref: string;
@@ -40,6 +46,13 @@ export interface TableData {
   originalOrder: OrderDetails;
 }
 
+interface StateDataType {
+  name: string;
+  color: string;
+  value: string | number;
+  paragrpg?: string;
+}
+
 interface ChartSectionHeaderProps extends DashboardHeaderProps {
   selectedBranchId: string;
 }
@@ -50,6 +63,16 @@ export const ChartSectionHeader: React.FC<ChartSectionHeaderProps> = ({
 }) => {
   const { data: allOrders, isLoading } = useFetchAllOrders();
   const [trackedOrder, setTrackedOrder] = useState<OrderDetails | null>(null);
+  const { data: allBranches } = useFetchBranch();
+
+  const branchDeliveryRates = useMemo(() => {
+    const map: Record<string, { min: number; max: number; price: number }[]> =
+      {};
+    allBranches?.forEach((b) => {
+      map[b.id] = b.deliveryRates;
+    });
+    return map;
+  }, [allBranches]);
 
   const filteredData = useMemo(() => {
     if (!allOrders) return [];
@@ -65,109 +88,232 @@ export const ChartSectionHeader: React.FC<ChartSectionHeaderProps> = ({
     }
   }, [filteredData]);
 
-  const stateData = useMemo(() => {
-    const totalSales = filteredData.reduce((grandTotal, order) => {
-      const transformedItems: CalculationItem[] = order.orderItems.map(
-        (item) => ({
-          quantity: item.quantity,
-          product: {
-            id: item.id || "",
-            name: item.productName || "Unknown Product",
-            price: item.price,
-            discount: item.discount,
-          },
-          selectedAddons:
-            item.orderAddons?.map((addon) => ({
-              quantity: addon.quantity,
-              addonItem: {
-                id: addon.addonItem?.id || "",
-                name: addon.addonItem?.name || "Unknown Addon",
-                price: addon.price,
-                discount: addon.addonItem?.discount,
+  const [stateData, setStateData] = useState<StateDataType[]>();
+
+  useEffect(() => {
+    if (!filteredData.length || !allBranches) {
+      setStateData([]);
+      return;
+    }
+
+    async function compute() {
+      const calculatedTotals = await Promise.all(
+        filteredData.map(async (order) => {
+          // --- 1. Transform Items ---
+          const transformedItems: CalculationItem[] = order.orderItems.map(
+            (item) => ({
+              quantity: item.quantity,
+              product: {
+                id: item.id || "",
+                name: item.productName || "Unknown Product",
+                price: Number(item.price),
+                discount: Number(item.discount || 0),
               },
-            })) || [],
+              selectedAddons:
+                item.orderAddons?.map((addon) => ({
+                  quantity: addon.quantity,
+                  addonItem: {
+                    id: addon.addonItem?.id || "",
+                    name: addon.addonItem?.name || "Unknown Addon",
+                    price: Number(addon.price),
+                    discount: Number(addon.addonItem?.discount || 0),
+                  },
+                })) || [],
+            })
+          );
+
+          // --- 2. Calculate Delivery Price ---
+          let deliveryPrice = 0;
+
+          if (order.type === "delivery" && order.location) {
+            const branch = allBranches?.find((b) => b.id === order.branchId);
+
+            if (branch?.location) {
+              try {
+                // === FIX: Cast to 'any' to stop TS complaining about Object vs String ===
+                // We know it is a string based on your console log
+                const locRaw = branch.location as any;
+                const locArray = JSON.parse(locRaw);
+
+                const branchLocation = {
+                  lat: Number(locArray[0]),
+                  lng: Number(locArray[1]),
+                };
+
+                // Cast order.location to string if TS thinks it's an object too
+                const userAddress = order.location as unknown as string;
+                const userLocation = await getCoordinatesFromAddress(
+                  userAddress
+                );
+
+                if (userLocation) {
+                  const distance = await getDistanceInKm(
+                    branchLocation,
+                    userLocation
+                  );
+                  const deliveryRates =
+                    branchDeliveryRates[order.branchId] || [];
+
+                  deliveryPrice = getDeliveryPrice(distance, deliveryRates);
+                }
+              } catch (error) {
+                console.error("Total Calculation Error", error);
+              }
+            }
+          }
+
+          // --- 3. Final Calculation ---
+          const summary = calculateTotals(
+            transformedItems,
+            order.type,
+            deliveryPrice
+          );
+          return summary.finalTotal;
         })
       );
 
-      const summary = calculateTotals(
-        transformedItems,
-        order.type as TOrderType
-      );
+      const totalSales = calculatedTotals.reduce((acc, curr) => acc + curr, 0);
 
-      return grandTotal + summary.finalTotal;
-    }, 0);
+      setStateData([
+        {
+          name: "Venta Total",
+          color: "Dgreen",
+          value: totalSales.toFixed(2),
+        },
+        {
+          name: "Pedido Total",
+          value: filteredData.length,
+          color: "#fff",
+          paragrpg: "Excluyendo pedidos cancelados y rechazados",
+        },
+      ]);
+    }
 
-    return [
-      { name: "Venta Total", color: "Dgreen", value: totalSales.toFixed(2) },
-      {
-        name: "Pedido Total",
-        value: filteredData.length,
-        color: "#fff",
-        paragrpg: "Excluyendo pedidos cancelados y rechazados",
-      },
-    ];
-  }, [filteredData]);
+    compute();
+  }, [filteredData, allBranches, branchDeliveryRates]);
 
-  const tableData = useMemo<TableData[]>(() => {
-    return filteredData.map((order): TableData => {
-      const itemNames = order.orderItems
-        .map((item) => {
-          const addons =
-            item.orderAddons && item.orderAddons.length > 0
-              ? " + " +
-                item.orderAddons
-                  .map(
-                    (addon) =>
-                      `${addon.addonItem?.name || "Addon"} (x${addon.quantity})`
-                  )
-                  .join(", ")
-              : "";
+  // console.log(stateData);
 
-          return `${item.productName} (x${item.quantity})${addons}`;
+  const [tableData, setTableData] = useState<TableData[]>([]);
+
+  useEffect(() => {
+    if (!filteredData.length || !allBranches) return;
+
+    async function computeTableData() {
+      const rows = await Promise.all(
+        filteredData.map(async (order) => {
+          // --- 1. Text Formatting ---
+          const itemNames = order.orderItems
+            .map((item) => {
+              const addons =
+                item.orderAddons && item.orderAddons.length > 0
+                  ? " + " +
+                    item.orderAddons
+                      .map(
+                        (addon) =>
+                          `${addon.addonItem?.name || "Addon"} (x${
+                            addon.quantity
+                          })`
+                      )
+                      .join(", ")
+                  : "";
+              return `${item.productName} (x${item.quantity})${addons}`;
+            })
+            .join(", ");
+
+          // --- 2. Calculation Items Setup ---
+          const transformedItems: CalculationItem[] = order.orderItems.map(
+            (item) => {
+              const product = (item as any).product || {};
+              const category = product.category || {};
+              return {
+                quantity: item.quantity,
+                product: {
+                  id: item.id || "N/A",
+                  name: item.productName || "Unknown Product",
+                  price: Number(item.price),
+                  discount: Number(item.discount || 0),
+                  categoryId: product.categoryId || category.id,
+                  volumeDiscountRules: category.volumeDiscountRules,
+                },
+                selectedAddons:
+                  item.orderAddons?.map((addon) => ({
+                    quantity: addon.quantity,
+                    addonItem: {
+                      id: addon.addonItem?.id || "N/A",
+                      name: addon.addonItem?.name || "Unknown Addon",
+                      price: Number(addon.price),
+                      discount: Number(addon.addonItem?.discount || 0),
+                    },
+                  })) || [],
+              };
+            }
+          );
+
+          // --- 3. Delivery Calculation ---
+          let deliveryPrice = 0;
+
+          if (order.type === "delivery" && order.location) {
+            const branch = allBranches?.find((b) => b.id === order.branchId);
+
+            if (branch?.location) {
+              try {
+                // === FIX: Cast to 'any' here as well ===
+                const locRaw = branch.location as any;
+                const locArray = JSON.parse(locRaw);
+
+                const branchLocation = {
+                  lat: Number(locArray[0]),
+                  lng: Number(locArray[1]),
+                };
+
+                const userAddress = order.location as unknown as string;
+                const userLocation = await getCoordinatesFromAddress(
+                  userAddress
+                );
+
+                if (userLocation) {
+                  const distance = await getDistanceInKm(
+                    branchLocation,
+                    userLocation
+                  );
+                  const deliveryRates =
+                    branchDeliveryRates[order.branchId] || [];
+
+                  deliveryPrice = getDeliveryPrice(distance, deliveryRates);
+                }
+              } catch (error) {
+                console.error("Table Calculation Error", error);
+              }
+            }
+          }
+
+          // --- 4. Final Totals ---
+          const summary = calculateTotals(
+            transformedItems,
+            order.type,
+            deliveryPrice
+          );
+
+          return {
+            ref: order.id,
+            name: order.name,
+            contact: order.phoneNumber,
+            items: itemNames || "No items",
+            totalPrice: summary.finalTotal,
+            platform: order.type,
+            date: new Date(order.createdAt),
+            status: order.status,
+            originalOrder: order,
+          };
         })
-        .join(", ");
-
-      const transformedItems: CalculationItem[] = order.orderItems.map(
-        (item) => ({
-          quantity: item.quantity,
-          product: {
-            id: item.id || "N/A",
-            name: item.productName || "Unknown Product",
-            price: item.price,
-            discount: item.discount,
-          },
-          selectedAddons:
-            item.orderAddons?.map((addon) => ({
-              quantity: addon.quantity,
-              addonItem: {
-                id: addon.addonItem?.id || "N/A",
-                name: addon.addonItem?.name || "Unknown Addon",
-                price: addon.price,
-                discount: addon.addonItem?.discount,
-              },
-            })) || [],
-        })
       );
 
-      // b. Call the centralized function to get the definitive summary
-      const summary = calculateTotals(
-        transformedItems,
-        order.type as TOrderType
-      );
+      setTableData(rows);
+    }
 
-      return {
-        ref: order.id,
-        name: order.name,
-        contact: order.phoneNumber,
-        items: itemNames || "No items",
-        totalPrice: summary.finalTotal,
-        platform: order.type,
-        date: new Date(order.createdAt),
-        status: order.status,
-        originalOrder: order,
-      };
-    });
-  }, [filteredData]);
+    computeTableData();
+  }, [filteredData, allBranches, branchDeliveryRates]);
 
   const columns = useMemo(
     () => [
@@ -180,7 +326,7 @@ export const ChartSectionHeader: React.FC<ChartSectionHeaderProps> = ({
       },
       {
         accessorKey: "name",
-        header: () => <Box fontWeight={"Black"}>Nom</Box>,
+        header: () => <Box fontWeight={"Black"}>Nombre</Box>,
       },
       {
         accessorKey: "contact",
@@ -188,18 +334,18 @@ export const ChartSectionHeader: React.FC<ChartSectionHeaderProps> = ({
       },
       {
         accessorKey: "items",
-        header: () => <Box fontWeight={"Black"}>Article</Box>,
+        header: () => <Box fontWeight={"Black"}>Artículos</Box>,
       },
       {
         accessorKey: "totalPrice",
-        header: () => <Box fontWeight={"Black"}>Prix ​​total</Box>,
+        header: () => <Box fontWeight={"Black"}>Precio total</Box>,
         cell: ({ row }: { row: Row<TableData> }) => (
           <Box>Ref {row.original.totalPrice.toFixed(2)}</Box>
         ),
       },
       {
         accessorKey: "status",
-        header: () => <Box fontWeight={"Black"}>Statut</Box>,
+        header: () => <Box fontWeight={"Black"}>Estatus</Box>,
         cell: ({ row }: { row: Row<TableData> }) => {
           const status = row.original.status.toLowerCase();
           const getStatusColor = (status: string) => {
@@ -226,9 +372,13 @@ export const ChartSectionHeader: React.FC<ChartSectionHeaderProps> = ({
               bgColor={getStatusColor(status)}
             >
               {status === "accepted_by_rider"
-                ? "Accepté"
+                ? "Aceptado"
                 : status === "confirmed"
-                ? "Accepté"
+                ? "Aceptado"
+                : status === "delivered"
+                ? "Entregado"
+                : status === "pending"
+                ? "Pendiente"
                 : status}
             </Center>
           );
@@ -283,7 +433,7 @@ export const ChartSectionHeader: React.FC<ChartSectionHeaderProps> = ({
           flexDirection={["column", "null", "row"]}
           w={"50%"}
         >
-          {stateData.map((item, ix) => {
+          {stateData?.map((item, ix) => {
             return (
               <Stack
                 key={ix}

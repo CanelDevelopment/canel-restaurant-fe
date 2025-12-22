@@ -12,6 +12,8 @@ interface Branch {
     name: string;
   };
   areas: string[];
+  deliveryRates: { min: number; max: number; price: number }[];
+  location: { lat: number; lng: number };
 }
 
 export const useFetchSpecificBranch = (id: string) => {

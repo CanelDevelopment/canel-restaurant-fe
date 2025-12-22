@@ -1,7 +1,7 @@
 import React from "react";
 import { Flex, HStack, Image, Text, Icon, Box } from "@chakra-ui/react";
 import { Counter } from "@/components/common/counter";
-import { useCartActions } from "@/store/cartStore";
+import { useRemoveFromCart, useUpdateQuantity } from "@/store/cartStore";
 import { FaRegTrashCan } from "react-icons/fa6";
 import { useRemoveCartItem } from "@/hooks/cart/usedeletecart";
 import { useUpdateCartItem } from "@/hooks/cart/useupdatecart";
@@ -35,7 +35,8 @@ export const CartItem: React.FC<CartItemProps> = ({
   addons = [],
 }) => {
   const { mutate: removeFromCartMutation } = useRemoveCartItem();
-  const { removeFromCart, updateQuantity } = useCartActions();
+  const removeFromCart = useRemoveFromCart();
+  const updateQuantity = useUpdateQuantity();
   const { mutate: updateCartMutation } = useUpdateCartItem();
   const { mutate: removeAddonMutation } = useRemoveAddonCartItem();
 
@@ -86,11 +87,11 @@ export const CartItem: React.FC<CartItemProps> = ({
           borderRadius="md"
         />
         <Flex direction="column" justify="center">
-          <Text fontSize="sm" fontWeight="bold">
+          <Text fontSize="md" fontWeight="bold">
             {item.name}
           </Text>
-          <Text fontSize="xs" color="gray.500">
-            {item.price}
+          <Text fontSize="dm" color="gray.500">
+            REF {item.price}
           </Text>
         </Flex>
       </HStack>

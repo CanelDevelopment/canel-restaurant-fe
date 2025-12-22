@@ -11,7 +11,7 @@ const Locationinput: React.FC<LocationInputProps> = ({
   cities,
 }) => {
   if (!cities || cities.length === 0) {
-    return <Box color={"white"}>No cities with available branches found.</Box>;
+    return <Box color={"white"}>No se encontraron ciudades con sucursales disponibles.</Box>;
   }
   return (
     <Box

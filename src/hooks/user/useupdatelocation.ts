@@ -10,7 +10,6 @@ interface UpdateLocationFormData {
   city: string;
   branch: string;
   deliveryType: string;
-  area: string;
 }
 
 interface UpdatedLocationData {
@@ -18,7 +17,6 @@ interface UpdatedLocationData {
   city: string | null;
   branch: string | null;
   deliveryType: string | null;
-  area: string | null;
 }
 
 export const useUpdateUserLocation = () => {
@@ -30,17 +28,16 @@ export const useUpdateUserLocation = () => {
     UpdateLocationFormData
   >({
     mutationFn: async (locationData) => {
-      console.log("This is from update location hook", locationData);
       return await axios.put(`/users/update-location`, locationData);
     },
     mutationKey: ["updateUserLocation"],
     retry: false,
     onSuccess: (response) => {
-      toast.success(response.message || "Location updated successfully!");
+      toast.success(response.message || "¡Ubicación actualizada con éxito!");
       queryClient.invalidateQueries({ queryKey: ["userProfile"] });
     },
     onError: (error) => {
-      toast.error(error?.response?.data.message || "Something went wrong!");
+      toast.error(error?.response?.data.message || "¡Algo salió mal!");
     },
   });
 };

@@ -2,11 +2,10 @@ import React, { useEffect } from "react";
 import { Box, Text, Heading, Icon, Button, VStack } from "@chakra-ui/react";
 import { FaXmark } from "react-icons/fa6";
 
-// Props for the Login Prompt Modal
 interface LoginPromptModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onRedirect: () => void; // A function to handle the redirection
+  onRedirect: () => void;
 }
 
 export const LoginPromptModal: React.FC<LoginPromptModalProps> = ({
@@ -14,7 +13,6 @@ export const LoginPromptModal: React.FC<LoginPromptModalProps> = ({
   onClose,
   onRedirect,
 }) => {
-  // This effect disables body scrolling when the modal is open
   useEffect(() => {
     if (isOpen) {
       const originalStyle = window.getComputedStyle(document.body).overflow;
@@ -25,12 +23,11 @@ export const LoginPromptModal: React.FC<LoginPromptModalProps> = ({
     }
   }, [isOpen]);
 
-  // If the modal is not open, render nothing
   if (!isOpen) return null;
 
   return (
     <>
-      {/* Backdrop */}
+      {/* Fondo de pantalla */}
       <Box
         position="fixed"
         top={0}
@@ -42,7 +39,7 @@ export const LoginPromptModal: React.FC<LoginPromptModalProps> = ({
         onClick={onClose}
       />
 
-      {/* Modal Content */}
+      {/* Contenido del modal */}
       <Box
         bg="white"
         borderRadius="2xl"
@@ -81,11 +78,12 @@ export const LoginPromptModal: React.FC<LoginPromptModalProps> = ({
               as="h2"
               fontFamily="AmsiProCond-Bold"
             >
-              Login Required
+              Se requiere inicio de sesión
             </Heading>
 
             <Text fontFamily="AmsiProCond" color="gray.600" fontSize="lg">
-              Please log in or create an account to proceed to checkout.
+              Por favor, inicia sesión o crea una cuenta para continuar con el
+              pago.
             </Text>
 
             <Button
@@ -98,7 +96,7 @@ export const LoginPromptModal: React.FC<LoginPromptModalProps> = ({
               fontSize="lg"
               onClick={onRedirect}
             >
-              Go to Login Page
+              Ir a la página de inicio de sesión
             </Button>
           </VStack>
         </Box>

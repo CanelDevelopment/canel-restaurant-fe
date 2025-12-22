@@ -18,10 +18,10 @@ export const useAddAddonItem = () => {
     retry: false,
     onSuccess() {
       queryClient.invalidateQueries({ queryKey: ["addon-item"] });
-      toast.success("Addon Item added successfully!!!");
+      toast.success("¡Artículo adicional agregado exitosamente!");
     },
     onError() {
-      toast.error("Something went wrong");
+      toast.error("Algo salió mal");
     },
   });
 };

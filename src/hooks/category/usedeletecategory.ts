@@ -3,12 +3,16 @@ import {
   type WithMessage,
   type ErrorWithMessage,
 } from "@/configs/axios.config";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export const useDeleteCategory = () => {
-  return useMutation<WithMessage, ErrorWithMessage, any>({
-    mutationFn: async (id: any) => {
+  const queryClient = useQueryClient();
+  return useMutation<WithMessage, ErrorWithMessage, string>({
+    mutationFn: async (id: string) => {
       return await axios.post(`/category/delete-category/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
     },
     mutationKey: ["create delete"],
     retry: false,

@@ -20,12 +20,12 @@ export const useRemoveAddonCartItem = () => {
       );
     },
     onSuccess: () => {
-      toast.success("Item removed from cart.");
+      toast.success("Artículo eliminado del carrito.");
       // Invalidate to refetch the updated cart
       queryClient.invalidateQueries({ queryKey: ["fetch-cart"] });
     },
     onError: (error) => {
-      toast.error(error.response?.data.message || "Failed to remove item.");
+      toast.error(error.response?.data.message || "Error al eliminar el artículo.");
     },
   });
 };

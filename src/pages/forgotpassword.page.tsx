@@ -35,7 +35,7 @@ const ForgotPasswordPage: React.FC = () => {
       });
       setIsSubmitted(true);
     } catch (error: any) {
-      toast.error("An error occurred. Please try again.");
+      toast.error("Ocurrió un error. Por favor, inténtalo de nuevo.");
       console.error(error);
     }
   };
@@ -52,11 +52,11 @@ const ForgotPasswordPage: React.FC = () => {
     >
       <Stack>
         <Text fontSize="2xl" fontFamily="AmsiProCond-Black" color="#3B5545">
-          Request Sent!
+          ¡Solicitud enviada!
         </Text>
         <Text fontFamily="AmsiProCond" color="gray.600">
-          If an account with that email exists, we have sent a password reset
-          link.
+          Si existe una cuenta con ese E-mail, hemos enviado un
+          enlace para restablecer la contraseña.
         </Text>
         <Link to="/admin-signin">
           <Button
@@ -66,7 +66,7 @@ const ForgotPasswordPage: React.FC = () => {
             width="100%"
             _hover={{ bg: "#4C9F7B" }}
           >
-            Back to Sign In
+            Volver a Iniciar Sesión
           </Button>
         </Link>
       </Stack>
@@ -100,27 +100,30 @@ const ForgotPasswordPage: React.FC = () => {
                 fontFamily="AmsiProCond-Black"
                 color="#3B5545"
               >
-                Forgot Password
+                ¿Olvidaste tu contraseña?
               </Text>
               <Text
                 fontFamily="AmsiProCond"
                 color="gray.500"
                 textAlign="center"
               >
-                No worries! Just enter your email to receive a reset link.
+                ¡No te preocupes! Simplemente ingresa tu dirección de correo
+                electrónico para recibir un enlace de restablecimiento.
               </Text>
             </Center>
 
             <Box>
               <Input
                 id="email"
-                placeholder="your-email@example.com"
+                placeholder="tu-correo@example.com"
                 type="email"
                 bg={"#F4F4F4"}
                 border={"none"}
                 rounded={"md"}
                 height={"45px"}
-                {...register("email", { required: "Email is required" })}
+                {...register("email", {
+                  required: "El E-mail es obligatorio",
+                })}
               />
               <Text>{errors.email && errors.email.message}</Text>
             </Box>
@@ -138,7 +141,7 @@ const ForgotPasswordPage: React.FC = () => {
                 bg: "#4C9F7B",
               }}
             >
-              Send Reset Link
+              Enviar enlace de restablecimiento
             </Button>
           </Stack>
         </Box>

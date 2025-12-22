@@ -35,7 +35,7 @@ function OrderDeliveryInfo() {
 
   return (
     <Box bgColor={"#CCEEDF"} rounded={"lg"} px={4} py={3} mt={3}>
-      <Text fontSize={"11px"}>
+      <Text fontSize={"sm"}>
         Su orden será entregada en aproximadamente 1 hora.
         <Text as={"span"} color={"Cbutton"} fontWeight={"Black"}>
           {deliveryDate}

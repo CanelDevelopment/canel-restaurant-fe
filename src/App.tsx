@@ -4,9 +4,10 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import "leaflet/dist/leaflet.css";
 import { UserProvider } from "./provider/user.provider";
 //
-function App() {
-  const queryClient = new QueryClient();
 
+const queryClient = new QueryClient();
+
+function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <UserProvider>

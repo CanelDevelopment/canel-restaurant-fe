@@ -27,8 +27,8 @@ interface AddonCategory {
 
 export const AddonNewContent = () => {
   const options = [
-    { value: "false", label: "En instance" },
-    { value: "true", label: "Publier" },
+    { value: "false", label: "PENDING" },
+    { value: "true", label: "PUBLICADO" },
   ];
 
   const visibilityCollection = createListCollection({
@@ -136,10 +136,10 @@ export const AddonNewContent = () => {
                 minW={["200px", "400px"]}
               >
                 <Text fontFamily={"AmsiProCond"} color={"#000"} minW="150px">
-                  Nom
+                  Nombre
                 </Text>
                 <Input
-                  placeholder="nom complemento"
+                  placeholder="Nombre del articulo"
                   border={"none"}
                   bg="gray.100"
                   {...register("name")}
@@ -155,11 +155,11 @@ export const AddonNewContent = () => {
               minW={["200px", "400px"]}
             >
               <Text minW="150px" color={"#000"}>
-                Descripci
+                Descripción
               </Text>
               <Textarea
                 border={"none"}
-                placeholder="Ingrese la descripci del complemento"
+                placeholder="Ingrese la Descripción del complemento"
                 bg="gray.100"
                 rows={4}
                 {...register("description")}

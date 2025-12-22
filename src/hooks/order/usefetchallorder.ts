@@ -1,8 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { axios, type ErrorWithMessage } from "@/configs/axios.config";
+import type { TOrderType } from "@/components/order/orderPayment";
 
 export interface OrderDetails {
-  type: string;
+  type: TOrderType;
   branchId: string;
   orderItems: {
     instructions: unknown;
@@ -24,9 +25,11 @@ export interface OrderDetails {
     }[];
   }[];
 
+  discount: string;
+
   userId: string;
   id: string;
-  status: "accepté" | "pending" | "cancelado";
+  status: "accepté" | "pending" | "cancelado" | "delivered";
   name: string;
   location: string;
   phoneNumber: string;
@@ -35,6 +38,7 @@ export interface OrderDetails {
   instructions?: string;
   riderId?: string;
   acceptedAt: string;
+  onlinePaymentProveImage: string;
   deliveredAt: string;
 }
 

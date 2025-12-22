@@ -1,4 +1,3 @@
-// Imports
 import {
   Box,
   Center,
@@ -16,7 +15,7 @@ import type { Row } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { DynamicTable } from "../../table/dynamictable";
 import { IncomingOrdersModal } from "./incomingordersmodal";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { DashboardHeading } from "../dashboardHeading";
 import {
   useFetchAllOrders,
@@ -29,6 +28,11 @@ import {
   type CalculationItem,
 } from "@/store/calculationStore";
 import type { TOrderType } from "@/components/order/orderPayment";
+import {
+  getCoordinatesFromAddress,
+  getDistanceInKm,
+  getDeliveryPrice,
+} from "@/helper/calculationofdistance";
 
 export type Data = {
   ref: string;
@@ -41,12 +45,15 @@ export type Data = {
   instruction: string;
   discount: number;
   date: Date;
-  status: string; // expanded status types
+  status: string;
 };
 
 export type TableData = Data & {
   originalOrder: OrderDetails;
 };
+
+// --- FIX: Increased to 15 to force the scrollbar to appear in the 70vh container ---
+const ITEMS_PER_PAGE = 15;
 
 export const IncomingOrdersHeader = () => {
   const {
@@ -57,20 +64,24 @@ export const IncomingOrdersHeader = () => {
 
   const [selectedBranchId, setSelectedBranchId] = useState<string>("all");
   const [selectedBranchText, setSelectedBranchText] =
-    useState<string>("All Branches");
+    useState<string>("Sucursales");
   const [globalFilter, setGlobalFilter] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
+  const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
 
   const {
     data: orders,
     isLoading: isOrdersLoading,
     isError: isOrdersError,
-    refetch: refetchOrders,
   } = useFetchAllOrders();
 
   const branchOptions = createListCollection({
     items: [
-      { key: "all", textValue: "All Branches", children: "All Branches" },
+      {
+        key: "all",
+        textValue: "Sucursales",
+        children: "Sucursales",
+      },
       ...(branches?.map((branch) => ({
         key: branch.id,
         textValue: branch.name,
@@ -79,99 +90,194 @@ export const IncomingOrdersHeader = () => {
     ],
   });
 
+  const branchRatesMap = useMemo(() => {
+    const map: Record<string, any> = {};
+    branches?.forEach((b) => {
+      map[b.id] = b.deliveryRates;
+    });
+    return map;
+  }, [branches]);
+
   const isLoading = isOrdersLoading || isBranchesLoading;
   const isError = isOrdersError || isBranchesError;
 
-  const formattedData = useMemo<TableData[]>(() => {
-    if (!Array.isArray(orders) || !Array.isArray(branches)) return [];
+  const [fullFilteredData, setTableData] = useState<TableData[]>([]);
 
-    const branchNameMap = new Map(branches.map((b) => [b.id, b.name]));
+  const filteredOrders = useMemo(() => {
+    if (!Array.isArray(orders)) return [];
 
-    return orders
-      .filter(
-        (order) =>
-          (selectedBranchId === "all" || order.branchId === selectedBranchId) &&
-          (order.id.toLowerCase().includes(globalFilter.toLowerCase()) ||
-            order.name.toLowerCase().includes(globalFilter.toLowerCase()) ||
-            order.phoneNumber.includes(globalFilter)) &&
-          (selectedStatus === "all" ||
-            order.status.toLowerCase() === selectedStatus.toLowerCase())
-      )
-      .map((order: OrderDetails): TableData => {
-        const itemNames = order.orderItems
-          .map((item) => {
-            const addons =
-              item.orderAddons && item.orderAddons.length > 0
-                ? " + " +
-                  item.orderAddons
-                    .map(
-                      (addon) =>
-                        `${addon.addonItem?.name || "Addon"} (x${
-                          addon.quantity
-                        })`
-                    )
-                    .join(", ")
-                : "";
+    return orders.filter(
+      (order) =>
+        (selectedBranchId === "all" || order.branchId === selectedBranchId) &&
+        (order.id.toLowerCase().includes(globalFilter.toLowerCase()) ||
+          order.name.toLowerCase().includes(globalFilter.toLowerCase()) ||
+          order.phoneNumber.includes(globalFilter)) &&
+        (selectedStatus === "all" ||
+          order.status.toLowerCase() === selectedStatus.toLowerCase())
+    );
+  }, [orders, selectedBranchId, globalFilter, selectedStatus]);
 
-            return `${item.productName} (x${item.quantity})${addons}`;
-          })
-          .join(", ");
+  useEffect(() => {
+    if (!branches || !filteredOrders.length) {
+      if (filteredOrders.length === 0) setTableData([]);
+      return;
+    }
 
-        const allInstructions = order.orderItems
-          .filter((item) => item.instructions)
-          .map((item) => item.instructions)
-          .join("; ");
+    async function processTableData() {
+      const branchNameMap = new Map(branches?.map((b) => [b.id, b.name]));
 
-        const transformedItems: CalculationItem[] = order.orderItems.map(
-          (item) => ({
-            quantity: item.quantity,
-            product: {
-              id: item.id || "unknown",
-              name: item.productName,
-              price: item.price,
-              discount: item.discount,
-            },
-            selectedAddons:
-              item.orderAddons?.map((addon) => ({
-                quantity: addon.quantity,
-                addonItem: {
-                  id: addon.addonItem?.id || "unknown",
-                  name: addon.addonItem?.name || "Addon",
-                  price: addon.price, // Use the snapshot price from orderAddon
-                  discount: addon.addonItem?.discount,
+      const calculatedRows = await Promise.all(
+        filteredOrders.map(async (order: OrderDetails): Promise<TableData> => {
+          const itemNames = order.orderItems
+            .map((item) => {
+              const addons =
+                item.orderAddons && item.orderAddons.length > 0
+                  ? " + " +
+                    item.orderAddons
+                      .map(
+                        (addon) =>
+                          `${addon.addonItem?.name || "Complemento"} (x${
+                            addon.quantity
+                          })`
+                      )
+                      .join(", ")
+                  : "";
+              return `${item.productName} (x${item.quantity})${addons}`;
+            })
+            .join(", ");
+
+          const allInstructions = order.orderItems
+            .filter((item) => item.instructions)
+            .map((item) => item.instructions)
+            .join("; ");
+
+          const transformedItems: CalculationItem[] = order.orderItems.map(
+            (item) => {
+              const product = (item as any).product || {};
+              const category = product.category || {};
+              return {
+                quantity: item.quantity,
+                product: {
+                  id: item.id || "unknown",
+                  name: item.productName,
+                  price: Number(item.price),
+                  discount: Number(item.discount || 0),
+                  categoryId: product.categoryId || category.id,
+                  volumeDiscountRules: category.volumeDiscountRules,
                 },
-              })) || [],
-          })
-        );
+                selectedAddons:
+                  item.orderAddons?.map((addon) => ({
+                    quantity: addon.quantity,
+                    addonItem: {
+                      id: addon.addonItem?.id || "unknown",
+                      name: addon.addonItem?.name || "Complemento",
+                      price: Number(addon.price),
+                      discount: Number(addon.addonItem?.discount || 0),
+                    },
+                  })) || [],
+              };
+            }
+          );
 
-        const summary = calculateTotals(
-          transformedItems,
-          order.type as TOrderType
-        );
+          let deliveryPrice = 0;
 
-        const totalPrice = summary.finalTotal;
+          if (order.type === "delivery" && order.location) {
+            const branch = branches?.find((b) => b.id === order.branchId);
 
-        const branchName = branchNameMap.get(order.branchId) || "Unknown";
+            if (branch?.location) {
+              try {
+                const locRaw = branch.location as any;
+                let branchLat = 0;
+                let branchLng = 0;
 
-        return {
-          ref: order.id,
-          name: order.name,
-          contact: order.phoneNumber,
-          item: itemNames,
-          branchName,
-          deliveryType: order.type,
-          discount: summary.discount,
-          totalPrice,
-          instruction: allInstructions || "None",
-          date: new Date(order.createdAt),
-          status: order.status,
-          originalOrder: order,
-        };
-      });
-  }, [orders, branches, selectedBranchId, globalFilter, selectedStatus]);
+                if (typeof locRaw === "string") {
+                  const parsed = JSON.parse(locRaw);
+                  if (Array.isArray(parsed)) {
+                    branchLat = parsed[0];
+                    branchLng = parsed[1];
+                  } else {
+                    branchLat = parsed.lat;
+                    branchLng = parsed.lng;
+                  }
+                } else {
+                  branchLat = locRaw.lat;
+                  branchLng = locRaw.lng;
+                }
+
+                const branchLocation = {
+                  lat: Number(branchLat),
+                  lng: Number(branchLng),
+                };
+
+                const userAddress = order.location as unknown as string;
+                const userLocation = await getCoordinatesFromAddress(
+                  userAddress
+                );
+
+                if (userLocation) {
+                  const distance = await getDistanceInKm(
+                    branchLocation,
+                    userLocation
+                  );
+                  const deliveryRates = branchRatesMap[order.branchId] || [];
+                  deliveryPrice = getDeliveryPrice(distance, deliveryRates);
+                }
+              } catch (error) {
+                console.error("Error calc delivery for table", error);
+              }
+            }
+          }
+
+          const summary = calculateTotals(
+            transformedItems,
+            order.type as TOrderType,
+            deliveryPrice
+          );
+
+          const branchName = branchNameMap.get(order.branchId) || "Desconocida";
+
+          return {
+            ref: order.id,
+            name: order.name,
+            contact: order.phoneNumber,
+            item: itemNames,
+            branchName,
+            deliveryType: order.type,
+            discount: summary.discount,
+            totalPrice: summary.finalTotal,
+            instruction: allInstructions || "Ninguna",
+            date: new Date(order.createdAt),
+            status: order.status,
+            originalOrder: order,
+          };
+        })
+      );
+
+      setTableData(calculatedRows);
+    }
+
+    processTableData();
+  }, [filteredOrders, branches, branchRatesMap]);
+
+  useEffect(() => {
+    setVisibleCount(ITEMS_PER_PAGE);
+  }, [selectedBranchId, globalFilter, selectedStatus]);
+
+  const displayedOrders = useMemo(() => {
+    return fullFilteredData.slice(0, visibleCount);
+  }, [fullFilteredData, visibleCount]);
+
+  const hasMore = visibleCount < fullFilteredData.length;
+
+  const loadMoreOrders = () => {
+    if (hasMore) {
+      // Load 10 more at a time
+      setVisibleCount((prev) => prev + 10);
+    }
+  };
 
   const handleExportPDF = () => {
-    const exportData = formattedData.map((order) => [
+    const exportData = fullFilteredData.map((order) => [
       order.ref.slice(0, 6).toUpperCase(),
       order.name,
       order.contact,
@@ -212,7 +318,7 @@ export const IncomingOrdersHeader = () => {
       },
       {
         accessorKey: "name",
-        header: () => <Box fontWeight={"Black"}>Nom</Box>,
+        header: () => <Box fontWeight={"Black"}>Nombre</Box>,
         cell: ({ row }: { row: Row<TableData> }) => (
           <Box className="capitalize truncate">{row.original.name}</Box>
         ),
@@ -262,11 +368,8 @@ export const IncomingOrdersHeader = () => {
           const getStatusColor = (status: string) => {
             switch (status.toLowerCase()) {
               case "accepté":
-                return "TrafficGreen";
               case "accepted_by_rider":
-                return "TrafficGreen";
               case "confirmed":
-                return "TrafficGreen";
               case "delivered":
                 return "TrafficGreen";
               case "pending":
@@ -292,9 +395,13 @@ export const IncomingOrdersHeader = () => {
                 textTransform="capitalize"
               >
                 {status === "accepted_by_rider"
-                  ? "Accepté"
+                  ? "Aceptado"
                   : status === "confirmed"
-                  ? "Accepté"
+                  ? "Aceptado"
+                  : status === "delivered"
+                  ? "Entregado"
+                  : status === "pending"
+                  ? "Pendiente"
                   : status}
               </Text>
               <IncomingOrdersModal
@@ -328,7 +435,7 @@ export const IncomingOrdersHeader = () => {
     return (
       <Center h="60vh">
         <Text color="red.500" fontSize="xl">
-          Failed to load incoming orders.
+          Error al cargar los pedidos entrantes.
         </Text>
       </Center>
     );
@@ -357,7 +464,7 @@ export const IncomingOrdersHeader = () => {
               <Select.HiddenSelect />
               <Select.Control>
                 <Select.Trigger bg="#ebebeb" h="42px" border="none">
-                  <Select.ValueText placeholder="Seleccionar Sucursal">
+                  <Select.ValueText placeholder="Sucursal">
                     {selectedBranchText}
                   </Select.ValueText>
                   <Select.Indicator color={"#575757"} />
@@ -380,27 +487,14 @@ export const IncomingOrdersHeader = () => {
             <Input
               bg="#ebebeb"
               type="search"
-              placeholder="Buscar por Ref#, Nom..."
+              placeholder="Buscar por Ref#, Nombre..."
               value={globalFilter}
               onChange={(e) => setGlobalFilter(e.target.value)}
               fontFamily="AmsiProCond"
             />
           </Flex>
 
-          <Flex gap={4} wrap="wrap">
-            <Button
-              bg="Cgreen"
-              width={["100%", "150px"]}
-              rounded="md"
-              color="Cbutton"
-              fontFamily="AmsiProCond"
-              pb={1}
-              onClick={() => {
-                refetchOrders();
-              }}
-            >
-              Recharger les commandes
-            </Button>
+          <Flex gap={4} wrap="wrap" align="center">
             <Button
               onClick={handleExportPDF}
               bg="Cgreen"
@@ -412,14 +506,17 @@ export const IncomingOrdersHeader = () => {
           </Flex>
         </Flex>
 
-        {/* ✅ Pass status filter to table */}
+        {/* DynamicTable is unchanged, but now receives enough data to scroll */}
         <DynamicTable
           showSearch={false}
           headerColor="#F8FBEF"
-          data={formattedData}
+          data={displayedOrders}
           columns={columns}
           selectedStatus={selectedStatus}
           setSelectedStatus={setSelectedStatus}
+          onLoadMore={loadMoreOrders}
+          hasMore={hasMore}
+          isLoading={false}
         />
       </Box>
     </Box>

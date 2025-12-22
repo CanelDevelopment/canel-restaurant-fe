@@ -48,7 +48,7 @@ export const useUpdateAddonItem = () => {
     },
 
     onSuccess: (data) => {
-      toast.success(data.message || "Addon Item updated successfully!");
+      toast.success(data.message || "¡Artículo adicional actualizado exitosamente!");
 
       queryClient.invalidateQueries({ queryKey: ["fetch-addon-items"] });
     },
@@ -56,9 +56,9 @@ export const useUpdateAddonItem = () => {
     onError: (error: any) => {
       const backendMessage = error?.response?.data?.message;
       toast.error(
-        backendMessage || error.message || "Failed to update addon item."
+        backendMessage || error.message || "Error al actualizar el artículo adicional."
       );
-      console.error("Failed to update addon item:", error);
+      console.error("Error al actualizar el artículo adicional:", error);
     },
   });
 };

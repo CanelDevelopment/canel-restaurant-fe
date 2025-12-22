@@ -13,12 +13,13 @@ export const useRemoveCartItem = () => {
       return await axios.post(`/cart/delete/${cartItemId}`);
     },
     onSuccess: () => {
-      toast.success("Item removed from cart.");
+      toast.success("Artículo eliminado del carrito.");
       // Invalidate to refetch the updated cart
       queryClient.invalidateQueries({ queryKey: ["fetch-cart"] });
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to remove item.");
+      console.log(error);
+      // toast.error(error.message || "Error al eliminar el artículo.");
     },
   });
 };

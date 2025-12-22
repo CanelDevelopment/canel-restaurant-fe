@@ -3,7 +3,7 @@ import {
   type WithMessage,
   type ErrorWithMessage,
 } from "@/configs/axios.config";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 
 interface BranchFormData {
@@ -15,10 +15,13 @@ interface BranchFormData {
   openingTime: string;
   closingTime: string;
   manager: string;
+  operationHours?: string;
   cityName: string;
   state?: string;
   status: string;
   areas?: string[];
+  orderType: string;
+  deliveryRates: { min: number; max: number; price: number }[];
 }
 
 interface BranchResponse extends WithMessage {
@@ -26,6 +29,8 @@ interface BranchResponse extends WithMessage {
 }
 
 export const useAddBranch = () => {
+  const queryClient = useQueryClient();
+
   return useMutation<BranchResponse, ErrorWithMessage, BranchFormData>({
     mutationFn: async (BranchFormData) => {
       const response = await axios.post(
@@ -37,10 +42,11 @@ export const useAddBranch = () => {
     mutationKey: ["create branch"],
     retry: false,
     onSuccess() {
-      toast.success("Branch added successfully!!");
+      toast.success("¡Sucursal agregada con éxito!");
+      queryClient.invalidateQueries({ queryKey: ["fetch-branch"] });
     },
     onError() {
-      toast.error("Something went wrong!");
+      toast.error("¡Algo salió mal!");
     },
   });
 };

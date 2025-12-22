@@ -57,7 +57,7 @@ export const AddRoleContent: React.FC = () => {
 
   const handleSave = () => {
     if (!selectedStaff) {
-      toast.error("Please select the staff");
+      toast.error("Por favor seleccione el personal");
       return;
     }
     savePermissions({
@@ -76,7 +76,7 @@ export const AddRoleContent: React.FC = () => {
             mb={10}
             spaceX={2}
           >
-            <Text>Nom: </Text>
+            <Text>Nombre: </Text>
             <Combobox.Root
               collection={staffCollection}
               onValueChange={(details) => {
@@ -96,7 +96,7 @@ export const AddRoleContent: React.FC = () => {
             >
               <Combobox.Control>
                 <Combobox.Input
-                  placeholder="Search for a staff member..."
+                  placeholder="Busque un miembro del personal..."
                   onChange={(e) => setInputValue(e.target.value)}
                 />
                 <Combobox.IndicatorGroup>
@@ -110,7 +110,7 @@ export const AddRoleContent: React.FC = () => {
               <Portal>
                 <Combobox.Positioner>
                   <Combobox.Content>
-                    <Combobox.Empty>No staff found</Combobox.Empty>
+                    <Combobox.Empty>No se encontró personal</Combobox.Empty>
                     {/* The collection now contains correctly shaped items */}
                     {staffCollection.items.map((item) => (
                       <Combobox.Item item={item} key={item.value}>

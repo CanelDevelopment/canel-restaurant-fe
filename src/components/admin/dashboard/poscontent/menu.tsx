@@ -18,12 +18,15 @@ import { FrequentCard } from "@/components/cart/frequentCard";
 import { useCartStore } from "@/store/cartStore";
 import toast from "react-hot-toast";
 import { useAddCart } from "@/hooks/cart/useaddcart";
+import type { Branch } from "./posContent";
 
 interface MenuProps {
   onPlaceOrder: () => void;
+  placePrintOrder: () => void;
   isPlacingOrder: boolean;
   changeRequest: string;
   onCommentChange: (comment: string) => void;
+  selectedBranch?: Branch;
 }
 
 interface Product {
@@ -46,14 +49,16 @@ interface GroupedProducts {
 
 export const Menu: React.FC<MenuProps> = ({
   onPlaceOrder,
+  placePrintOrder,
   isPlacingOrder,
   changeRequest,
   onCommentChange,
+  selectedBranch,
 }) => {
   const { data: allProducts, isLoading } = useFetchProducts();
   const [searchTerm, setSearchTerm] = useState("");
 
-  const addToCartLocal = useCartStore((state) => state.actions.addToCart);
+  const addToCartLocal = useCartStore((state) => state.addToCart);
 
   const { mutate: addCartToDbMutation } = useAddCart();
 
@@ -66,7 +71,7 @@ export const Menu: React.FC<MenuProps> = ({
     const groups: Record<string, Product[]> = {};
 
     filteredProducts.forEach((product) => {
-      const categoryName = product.category?.name || "Other Items";
+      const categoryName = product.category?.name || "Otros Artículos";
       if (!groups[categoryName]) {
         groups[categoryName] = [];
       }
@@ -128,11 +133,13 @@ export const Menu: React.FC<MenuProps> = ({
                       discount: product.discount,
                       image: product.image,
                     });
-                    toast.success(`${product.name} added to cart!`);
+                    toast.success(`${product.name} añadido al carrito!`);
                   },
                   onError: (error) => {
-                    console.error("Failed to add item to DB cart:", error);
-                    toast.error("Could not add item. Please try again.");
+                    console.error("No se pudo añadir al carrito en DB:", error);
+                    toast.error(
+                      "No se pudo añadir el artículo. Inténtalo de nuevo."
+                    );
                   },
                 });
               }}
@@ -145,9 +152,9 @@ export const Menu: React.FC<MenuProps> = ({
 
   return (
     <Flex flexDirection={["column", "column", "row"]}>
-      {/* Left: Products Section */}
+      {/* Izquierda: Sección de Productos */}
       <Box flex="1" bg="white" py={4}>
-        {/* Search Bar */}
+        {/* Barra de búsqueda */}
         <Box px={[3, 6, 6]} w={["100%", "100%", "100%", "40%"]} my={6}>
           <InputGroup>
             <>
@@ -175,11 +182,11 @@ export const Menu: React.FC<MenuProps> = ({
           </InputGroup>
         </Box>
 
-        {/* --- Render the dynamic product sections here --- */}
+        {/* --- Renderizar las secciones de productos dinámicamente --- */}
         {renderProductSections()}
       </Box>
 
-      {/* Right: Cart Section */}
+      {/* Derecha: Sección del Carrito */}
       <Box
         width={["100%", "100%", "300px", "400px"]}
         bg="#FBFFEE"
@@ -189,6 +196,8 @@ export const Menu: React.FC<MenuProps> = ({
         h="100vh"
       >
         <POSCart
+          selectedBranch={selectedBranch}
+          placePrintOrder={placePrintOrder}
           onPlaceOrder={onPlaceOrder}
           isPlacingOrder={isPlacingOrder}
           changeRequest={changeRequest}

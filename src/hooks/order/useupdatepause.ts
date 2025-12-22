@@ -27,11 +27,11 @@ export const useUpdateBranchPauseStatus = () => {
       return data;
     },
     onSuccess: (data) => {
-      toast.success(data.message || "Branch status updated!");
+      toast.success(data.message || "¡Estado de la sucursal actualizado!");
       queryClient.invalidateQueries({ queryKey: ["fetch-branches"] });
     },
     onError: (error) => {
-      const message = error.response?.data?.message || "Something went wrong!";
+      const message = error.response?.data?.message || "¡Algo salió mal!";
       toast.error(message);
     },
   });
@@ -45,11 +45,11 @@ export const useUpdateGlobalPauseStatus = () => {
       return data;
     },
     onSuccess: (data) => {
-      toast.success(data.message || "Global status updated!");
+      toast.success(data.message || "¡Estado global actualizado!");
       queryClient.invalidateQueries({ queryKey: ["fetch-branches"] });
     },
     onError: (error) => {
-      const message = error.response?.data?.message || "Something went wrong!";
+      const message = error.response?.data?.message || "¡Algo salió mal!";
       toast.error(message);
     },
   });

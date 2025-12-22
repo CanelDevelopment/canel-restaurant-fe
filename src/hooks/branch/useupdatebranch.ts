@@ -15,6 +15,10 @@ interface UpdateBranchPayload {
   status?: boolean;
   operatingHours?: string;
   phoneNumber?: string;
+  areas?: string[];
+  location?: string;
+  deliveryRates?: { min: number; max: number; price: number }[];
+  orderType: string;
 }
 
 export const useUpdateBranch = () => {
@@ -31,13 +35,15 @@ export const useUpdateBranch = () => {
 
     // On success, provide user feedback and refetch the data.
     onSuccess: (data) => {
-      toast.success(data.message || "Branch updated successfully!");
+      toast.success(data.message || "¡Sucursal actualizada con éxito!");
       queryClient.invalidateQueries({ queryKey: ["fetch-branch"] });
     },
 
     // On error, provide user feedback.
     onError: (error) => {
-      toast.error(error.response?.data.message || "Failed to update branch.");
+      toast.error(
+        error.response?.data.message || "Error al actualizar la sucursal."
+      );
       console.error("Error updating branch:", error);
     },
   });

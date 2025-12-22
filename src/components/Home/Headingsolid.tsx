@@ -1,11 +1,4 @@
-import {
-  Box,
-  Heading,
-  Image,
-  Flex,
-  useToken,
-  Container,
-} from "@chakra-ui/react";
+import { Box, Heading, Flex, useToken, Container } from "@chakra-ui/react";
 import { useRef } from "react";
 
 type headingProps = {
@@ -32,16 +25,11 @@ export const Headingsolid: React.FC<headingProps> = ({ title }) => {
             fontFamily={"AmsiProCond-Black"}
             fontSize={["3xl", "4xl"]}
             color="Cbutton"
+            position={"relative"}
+            zIndex={9}
           >
             {title}
           </Heading>
-          <Image
-            loading="lazy"
-            src="./Logos/black.png"
-            alt="logo"
-            ml={4}
-            width={["40px", "60px"]}
-          />
         </Flex>
 
         {/* Pushing to GITHUB */}

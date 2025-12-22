@@ -1,16 +1,7 @@
-import {
-  Box,
-  Center,
-  Container,
-  Icon,
-  Image,
-  Spinner,
-  Text,
-} from "@chakra-ui/react";
+import { Box, Center, Icon, Image, Spinner, Text } from "@chakra-ui/react";
 import { FaFacebook, FaInstagram } from "react-icons/fa";
-import React, { useState, useMemo } from "react"; // 1. Import useMemo
+import React from "react";
 import Locationinput from "@/components/Location/Locationinput";
-import LocationDrawer from "@/components/Location/LocationDrawer";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { ServiceTypeSelector } from "@/components/Location/servicetype";
 import { useFetchBranch } from "@/hooks/branch/usefetchbranch";
@@ -21,23 +12,20 @@ import {
 } from "@/hooks/branding/usefetchbranding";
 import { useUpdateUserLocation } from "@/hooks/user/useupdatelocation";
 import { useFetchCurrentUser } from "@/hooks/user/usefetchuser";
+import { useMemo, useState } from "react";
 
-interface Branch {
+export interface Branch {
   id: string;
   name: string;
-  serviceTypes: string[];
-  city?: {
-    id: string;
-    name: string;
-  };
-  areas?: string[];
+  city?: { id: string; name: string };
+  orderType: "pickup" | "delivery" | "both";
+  deliveryRates: { min: number; max: number; price: number }[];
 }
 
 const Locationform: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Data fetching hooks
   const { mutate: updateUserLocation, isPending: isUpdatingLocation } =
     useUpdateUserLocation();
   const { data: bannerImage } = useFetchBanner();
@@ -45,35 +33,39 @@ const Locationform: React.FC = () => {
   const { data: links } = useFetchLinks();
   const { data: currentUser, isLoading: isUserLoading } = useFetchCurrentUser();
 
-  // State hooks
+  // --- State Management ---
+  const [view, setView] = useState<"city" | "branch">("city");
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
-  const [isLoadingCity, setIsLoadingCity] = useState(false);
   const [cityBranches, setCityBranches] = useState<Branch[]>([]);
-  const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
-  const [selectionStep, setSelectionStep] = useState<
-    "service" | "pickup" | "delivery_branch" | "delivery_area"
-  >("service");
+  const [isLoading, setIsLoading] = useState(false);
 
-  // 2. Memoize a unique list of cities that have branches
-  const citiesWithBranches = useMemo(() => {
+  const branchesWithOrderType: Branch[] = useMemo(() => {
     if (!allBranches) return [];
-    const citySet = new Set<string>();
-    allBranches.forEach((branch) => {
-      if (branch.city?.name) {
-        citySet.add(branch.city.name);
-      }
-    });
-    return Array.from(citySet);
+
+    return allBranches.map((b: any) => ({
+      ...b,
+      orderType: b.orderType || "pickup",
+    }));
   }, [allBranches]);
 
-  if (isUserLoading) {
+  const citiesWithBranches = useMemo(() => {
+    const citySet = new Set<string>();
+    branchesWithOrderType.forEach((branch) => {
+      if (branch.city?.name) citySet.add(branch.city.name);
+    });
+    return Array.from(citySet);
+  }, [branchesWithOrderType]);
+
+  // --- Loading State ---
+  if (isUserLoading || isLoadingBranches || isUpdatingLocation || isLoading) {
     return (
-      <Center height="100vh" w="100vw">
+      <Center height="100vh">
         <Spinner size="xl" />
       </Center>
     );
   }
 
+  // --- Redirect Logic ---
   const searchParams = new URLSearchParams(location.search);
   const isChangingLocation = searchParams.get("change") === "true";
   const userHasSavedLocation = !!(
@@ -84,146 +76,106 @@ const Locationform: React.FC = () => {
     return <Navigate to="/home" replace />;
   }
 
-  if (isLoadingBranches || isLoadingCity || isUpdatingLocation) {
-    return (
-      <Center height="100vh">
-        <Spinner size="xl" />
-      </Center>
-    );
-  }
-
-  // 3. This function contains the main logic change
+  // --- Handlers ---
   const handleCitySelect = (cityName: string) => {
-    setIsLoadingCity(true);
-    if (!allBranches) {
-      toast.error("Branch data is not available yet. Please wait a moment.");
-      setIsLoadingCity(false);
-      return;
-    }
+    setIsLoading(true);
 
-    const branchesInCity = allBranches.filter(
+    const branchesInCity = branchesWithOrderType.filter(
       (branch) => branch.city?.name.toLowerCase() === cityName.toLowerCase()
     );
 
-    // --- START: MODIFIED LOGIC FOR SINGLE-BRANCH CITIES ---
     if (branchesInCity.length === 1) {
       const singleBranch = branchesInCity[0];
-      const locationData = {
-        city: cityName,
-        branch: singleBranch.name,
-        deliveryType: "pickup", // Force deliveryType to pickup
-        area: "N/A",
-      };
-
-      toast.success(
-        `Welcome to our ${cityName} branch! Pick-up has been selected automatically.`
-      );
-
-      // Handle both logged-in and logged-out users
-      if (currentUser && currentUser.id) {
-        updateUserLocation(locationData, {
-          onSuccess: () => {
-            localStorage.setItem("selectedCity", cityName);
-            localStorage.setItem("selectedBranch", singleBranch.id);
-            localStorage.setItem("deliveryType", "pickup");
-            localStorage.removeItem("selectedArea");
-            navigate("/home");
-          },
-        });
-      } else {
-        localStorage.setItem("selectedCity", cityName);
-        localStorage.setItem("selectedBranch", singleBranch.id);
-        localStorage.setItem("deliveryType", "pickup");
-        localStorage.removeItem("selectedArea");
-        navigate("/home");
-      }
-      return; // Exit the function after handling
-    }
-    // --- END: MODIFIED LOGIC ---
-
-    if (branchesInCity.length > 1) {
-      setCityBranches(branchesInCity);
-      setSelectedCity(cityName);
-    } else {
-      // This case should no longer be reachable if the input is filtered,
-      // but we keep it as a safeguard.
-      toast.error(`Sorry, no branches were found in ${cityName}.`);
-      localStorage.removeItem("selectedCity");
-    }
-    setIsLoadingCity(false);
-  };
-
-  // (The rest of the functions: handleSelectServiceType, handleSelectPickupBranch, etc. remain unchanged)
-  const handleSelectServiceType = (type: "pickup" | "delivery") => {
-    if (type === "pickup") setSelectionStep("pickup");
-    else setSelectionStep("delivery_branch");
-  };
-
-  const handleSelectPickupBranch = (branch: Branch) => {
-    if (!selectedCity) return;
-    const locationData = {
-      city: selectedCity,
-      branch: branch.name,
-      deliveryType: "pickup",
-      area: "N/A",
-    };
-    if (currentUser && currentUser.id) {
-      updateUserLocation(locationData, {
-        onSuccess: () => {
-          localStorage.setItem("deliveryType", "pickup");
-          localStorage.setItem("selectedBranch", branch.id);
-          localStorage.setItem("selectedCity", selectedCity);
-          localStorage.removeItem("selectedArea");
-          navigate("/home");
-        },
-      });
+      const deliveryType =
+        singleBranch.orderType === "delivery" ? "delivery" : "pickup";
+      handleFinalSelection(cityName, singleBranch, deliveryType);
       return;
     }
-    localStorage.setItem("deliveryType", "pickup");
-    localStorage.setItem("selectedBranch", branch.id);
-    localStorage.setItem("selectedCity", selectedCity);
-    localStorage.removeItem("selectedArea");
-    navigate("/home");
+
+    if (branchesInCity.length > 1) {
+      setSelectedCity(cityName);
+      setCityBranches(branchesInCity);
+      setView("branch");
+    } else {
+      toast.error(`Lo sentimos, no se encontraron sucursales en ${cityName}.`);
+    }
+
+    setIsLoading(false);
   };
 
-  const handleSelectDeliveryBranch = (branch: Branch) => {
-    setSelectedBranch(branch);
-    setSelectionStep("delivery_area");
+  const handleBranchSelect = (branch: Branch) => {
+    if (!selectedCity) return;
+    const deliveryType =
+      branch.orderType === "delivery" ? "delivery" : "pickup";
+    handleFinalSelection(selectedCity, branch, deliveryType);
   };
 
-  const handleSelectDeliveryArea = (area: string) => {
-    if (selectedBranch && selectedCity) {
-      const locationData = {
-        city: selectedCity,
-        branch: selectedBranch.name,
-        deliveryType: "delivery",
-        area: area,
-      };
-      if (currentUser && currentUser.id) {
-        updateUserLocation(locationData, {
-          onSuccess: () => {
-            localStorage.setItem("deliveryType", "delivery");
-            localStorage.setItem("selectedBranch", selectedBranch.id);
-            localStorage.setItem("selectedArea", area);
-            localStorage.setItem("selectedCity", selectedCity);
-            navigate("/home");
-          },
-        });
-        return;
-      }
-      localStorage.setItem("deliveryType", "delivery");
-      localStorage.setItem("selectedBranch", selectedBranch.id);
-      localStorage.setItem("selectedArea", area);
-      localStorage.setItem("selectedCity", selectedCity);
+  /**
+   * MODIFIED: This function now stores the entire branch object from the backend
+   * into local storage.
+   */
+  const handleFinalSelection = (
+    city: string,
+    branch: Branch,
+    deliveryType: "pickup" | "delivery"
+  ) => {
+    setIsLoading(true);
+
+    const locationData = {
+      city,
+      branch: branch.name,
+      deliveryType,
+    };
+
+    const saveToLocalStorage = () => {
+      localStorage.setItem("selectedBranch", JSON.stringify(branch));
+
+      localStorage.setItem("selectedCity", city);
+      localStorage.setItem("deliveryType", deliveryType);
+
       navigate("/home");
+    };
+
+    if (currentUser && currentUser.id) {
+      updateUserLocation(locationData, { onSuccess: saveToLocalStorage });
+    } else {
+      saveToLocalStorage();
     }
   };
 
   const handleGoBack = () => {
-    if (selectionStep === "delivery_area") setSelectionStep("delivery_branch");
-    else setSelectionStep("service");
+    if (view === "branch") {
+      setSelectedCity(null);
+      setCityBranches([]);
+      setView("city");
+    }
   };
 
+  const renderContent = () => {
+    switch (view) {
+      case "branch":
+        return (
+          <ServiceTypeSelector
+            view={view}
+            cityBranches={cityBranches}
+            selectedBranch={null}
+            onSelectBranch={handleBranchSelect}
+            onSelectService={() => {}}
+            onBack={handleGoBack}
+          />
+        );
+      case "city":
+      default:
+        return (
+          <Locationinput
+            cities={citiesWithBranches}
+            onCitySelect={handleCitySelect}
+          />
+        );
+    }
+  };
+
+  // --- JSX Return ---
   return (
     <Box display={"flex"} height="100vh">
       <Box
@@ -236,10 +188,7 @@ const Locationform: React.FC = () => {
         bgRepeat="no-repeat"
         bgPos="center"
         height="100vh"
-        width="100vw"
-        position="relative"
-        flex={1}
-        w="50%"
+        width="50%"
         display={["none", "none", "flex"]}
       >
         <Link to="/home">
@@ -247,30 +196,7 @@ const Locationform: React.FC = () => {
         </Link>
       </Box>
 
-      {/* Right Side */}
       <Box flex={1} w="50%" h="100%" bgColor="#7a9f8a" position="relative">
-        <Container
-          position="absolute"
-          display="flex"
-          justifyContent="space-between"
-          alignItems="center"
-          right={0}
-          top={[4, 6]}
-          w={["100%", "100%", "auto"]}
-        >
-          <Link to="/home">
-            <Image
-              src="/Logos/logo.png"
-              alt="Logo"
-              width={[20, 28]}
-              ml={[4, 4]}
-              mt={4}
-              display={["flex", "flex", "none"]}
-            />
-          </Link>
-          <LocationDrawer />
-        </Container>
-
         <Box
           display="flex"
           flexDirection="column"
@@ -296,23 +222,9 @@ const Locationform: React.FC = () => {
             porque te lo mereces...
           </Text>
 
-          {selectedCity ? (
-            <ServiceTypeSelector
-              cityBranches={cityBranches}
-              step={selectionStep}
-              selectedBranch={selectedBranch}
-              onSelectService={handleSelectServiceType}
-              onSelectPickupBranch={handleSelectPickupBranch}
-              onSelectDeliveryBranch={handleSelectDeliveryBranch}
-              onSelectDeliveryArea={handleSelectDeliveryArea}
-              onBack={handleGoBack}
-            />
-          ) : (
-            <Locationinput cities={citiesWithBranches}  onCitySelect={handleCitySelect} />
-          )}
+          {renderContent()}
         </Box>
 
-        {/* Footer Socials (unchanged) */}
         <Box
           pl={[4, 8]}
           display="flex"
@@ -320,7 +232,7 @@ const Locationform: React.FC = () => {
           alignItems="center"
           gap={2}
           position="absolute"
-          bottom={10}
+          bottom={[1, 5]}
         >
           <Text fontFamily="AmsiProCond" fontSize="xl" color="white">
             Síguenos:

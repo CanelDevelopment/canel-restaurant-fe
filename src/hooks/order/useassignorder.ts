@@ -23,14 +23,14 @@ export const useAssignRider = () => {
     },
 
     onSuccess: (data, variables) => {
-      toast.success(data.message || "Rider assigned successfully!");
+      toast.success(data.message || "¡Repartidor asignado con éxito!");
 
       queryClient.invalidateQueries({ queryKey: ["orders"] });
       queryClient.invalidateQueries({ queryKey: ["order", variables.orderId] });
     },
 
     onError: (error) => {
-      toast.error(error.response?.data.message || "Failed to assign rider.");
+      toast.error(error.response?.data.message || "Error al asignar repartidor.");
       console.error("Error assigning rider:", error);
     },
   });

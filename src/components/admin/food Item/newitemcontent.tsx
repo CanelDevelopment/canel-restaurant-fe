@@ -18,15 +18,21 @@ import {
 } from "@chakra-ui/react";
 // import { FaPlus } from "react-icons/fa";
 // import { IoListOutline } from "react-icons/io5";
-import React, { useEffect, useMemo, useState } from "react";
 // import { TbRosetteDiscountFilled } from "react-icons/tb";
 // import { AiOutlinePlus } from "react-icons/ai";
+import React, { useEffect, useMemo, useState } from "react";
 import { HeaderSection } from "./headersection";
 import { SelectFood } from "./selectfood";
 import { useAddProduct } from "@/hooks/product/usecreateproduct";
-import { useForm } from "react-hook-form";
+import { useFieldArray, useForm } from "react-hook-form";
 import { useFetchCategories } from "@/hooks/category/usefetchcategory";
 import { TbRosetteDiscountFilled } from "react-icons/tb";
+import { FaTrash } from "react-icons/fa6";
+
+export interface ProductVariant {
+  name: string;
+  price: number;
+}
 
 interface productForm {
   name: string;
@@ -37,6 +43,8 @@ interface productForm {
   categoryId: string;
   addonItemIds: string[];
   availability: boolean;
+  tax: number;
+  variants: ProductVariant[];
 }
 
 export const NewItemContent: React.FC = () => {
@@ -50,8 +58,8 @@ export const NewItemContent: React.FC = () => {
   const [statusKey, setStatusKey] = useState("true");
 
   const options = [
-    { key: "true", label: "Publish" },
-    { key: "false", label: "Pending" },
+    { key: "true", label: "PUBLICADO" },
+    { key: "false", label: "PENDING" },
   ];
 
   const collection = createListCollection({
@@ -61,9 +69,19 @@ export const NewItemContent: React.FC = () => {
     })),
   });
 
-  const { register, handleSubmit, setValue, reset, watch } =
-    useForm<productForm>();
+  const { register, handleSubmit, setValue, reset, watch, control } =
+    useForm<productForm>({
+      defaultValues: {
+        variants: [{ name: "", price: 0 }],
+      },
+    });
+
   const { mutate, isPending } = useAddProduct();
+
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "variants",
+  });
 
   const { onChange: onFileChange, ...restFileRegister } =
     register("productImage");
@@ -115,6 +133,7 @@ export const NewItemContent: React.FC = () => {
     formData.append("price", String(values.price));
     formData.append("discount", String(values.discount));
     formData.append("categoryId", values.categoryId);
+    // formData.append("tax", String(values.tax));
 
     if (values.availability !== undefined) {
       formData.append("availability", values.availability.toString());
@@ -130,6 +149,15 @@ export const NewItemContent: React.FC = () => {
       values.addonItemIds.forEach((id) => {
         formData.append("addonItemIds", id);
       });
+    }
+
+    const validVariants = values.variants.filter(
+      (variant) => variant.name && variant.name.trim() !== ""
+    );
+
+    // 2. If there are valid variants, stringify and append them.
+    if (validVariants.length > 0) {
+      formData.append("variants", JSON.stringify(validVariants));
     }
 
     mutate(formData, {
@@ -236,7 +264,7 @@ export const NewItemContent: React.FC = () => {
                     bgColor={"#F4F4F4"}
                     border={"none"}
                     rounded={"lg"}
-                    placeholder="nom de l'article"
+                    placeholder="Nombre del articulo"
                     py={6}
                     {...register("name")}
                   />
@@ -425,6 +453,19 @@ export const NewItemContent: React.FC = () => {
                   />
                 </InputGroup>
               </Box>
+
+              {/* <Box flex={1} w={["100%", "100%", "35%"]}>
+                <Text mb={3}>Tasa Impositiva</Text>
+                <InputGroup startElement={<TbRosetteDiscountFilled />}>
+                  <Input
+                    rounded={"md"}
+                    bgColor={"#F4F4F4"}
+                    border={"none"}
+                    type="number"
+                    {...register("tax")}
+                  />
+                </InputGroup>
+              </Box> */}
               {/* <Box flex={1} w={["100%", "100%", "50%"]}>
                 <Box
                   rounded="full"
@@ -513,7 +554,67 @@ export const NewItemContent: React.FC = () => {
             </Box>
           </Box>
 
+          <HeaderSection title="Variantes y Precios" />
+
+          <Box p={6}>
+            {fields.map((field, index) => (
+              <HStack
+                key={field.id} // Important for React's reconciliation
+                w={["100%", "100%", "100%", "70%"]}
+                alignItems={"center"}
+                flexDirection={["column", "column", "row"]}
+                gapX={4}
+                mb={4}
+              >
+                <Box flex={1} w="100%">
+                  <Text mb={2}>
+                    Nombre de la Variante (ej. 1/2 KG, Pequeño)
+                  </Text>
+                  <Input
+                    placeholder="Nombre de la Variante"
+                    rounded={"md"}
+                    bgColor={"#F4F4F4"}
+                    border={"none"}
+                    {...register(`variants.${index}.name`)}
+                  />
+                </Box>
+                <Box flex={1} w="100%">
+                  <Text mb={2}>Precio de esta Variante</Text>
+                  <Input
+                    placeholder="Ref:"
+                    rounded={"md"}
+                    bgColor={"#F4F4F4"}
+                    border={"none"}
+                    type="number"
+                    step="0.01"
+                    {...register(`variants.${index}.price`)}
+                  />
+                </Box>
+
+                <Button
+                  mt="auto"
+                  colorScheme="red"
+                  variant="ghost"
+                  onClick={() => remove(index)}
+                  disabled={fields.length <= 1}
+                >
+                  <FaTrash />
+                </Button>
+              </HStack>
+            ))}
+
+            <Button
+              mt={4}
+              // colorPalette="green"
+              bgColor={"Cbutton"}
+              onClick={() => append({ name: "", price: 0 })}
+            >
+              Añadir Variante
+            </Button>
+          </Box>
+
           <HeaderSection title="Artículos de Complemento" />
+
           <Box p={6}>
             <Flex
               alignItems={"center"}

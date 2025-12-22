@@ -1,19 +1,18 @@
+import { authClient } from "@/provider/user.provider";
+import { usePriceCalculations } from "@/store/calculationStore";
 import {
   Box,
   Button,
-  Grid,
   Heading,
-  HStack,
-  Icon,
   Input,
-  RadioGroup,
+  Spinner,
   Tabs,
   Text,
   VStack,
 } from "@chakra-ui/react";
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { BsInfo } from "react-icons/bs";
+import { usePaymentInputs } from "react-payment-inputs";
 
 export default function OnlinePaymentUI() {
   const [cardData, setCardData] = useState({
@@ -24,53 +23,128 @@ export default function OnlinePaymentUI() {
     telephonePin: "",
   });
 
-  const handleCardDataChange = (e: any) => {
-    const { name, value } = e.target;
-    setCardData((prevData) => ({
-      ...prevData,
-      [name]: value,
-    }));
-  };
+  const [c2pData, setC2pData] = useState({
+    originMobile: "",
+    destinationMobile: "04241574090",
+    destinationId: "412241940",
+    purchaseCode: "",
+  });
 
-  // Function to handle changes in the RadioGroup
-  const handleAccountTypeChange = (value: any) => {
-    setCardData((prevData) => ({
-      ...prevData,
-      accountType: value,
-    }));
-  };
+  function normalizePhone(phone: string) {
+    const digits = phone.replace(/\D/g, "");
 
-  // --- FORM SUBMISSION ---
-  const handleCardPaymentSubmit = async () => {
+    return digits.slice(-11);
+  }
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { getCardNumberProps, getExpiryDateProps, getCVCProps } =
+    usePaymentInputs();
+
+  const summary = usePriceCalculations();
+
+  function generateDateBasedInvoiceNumber() {
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const randomNumber = Math.floor(Math.random() * 10000);
+    return `${year}${month}${randomNumber}`;
+  }
+
+  const { data } = authClient.useSession();
+
+  const customerId = data?.session.id;
+
+  async function handlePay() {
     if (!cardData.cardNumber || !cardData.expirationDate || !cardData.cvv) {
-      toast.error("Enter the info");
+      toast.error("Fill all card details");
       return;
     }
-  };
 
-  const transactionPayload = {
-    trx_type: "compra",
-    payment_method: "TDC",
-    card_number: cardData.cardNumber,
-    customer_id: "V18366876",
-    invoice_number: "INV-2025-12345",
-    account_type: cardData.accountType,
-    twofactor_auth: cardData.telephonePin,
-    expiration_date: cardData.expirationDate,
-    cvv: cardData.cvv,
-    currency: "VES",
-    amount: 570.99,
-  };
+    setIsSubmitting(true);
 
-  console.log(
-    "This the payload for transacction payload:-",
-    transactionPayload
-  );
+    const invoiceNumber = generateDateBasedInvoiceNumber();
+
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/payment/create-payment`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            cardNumber: cardData.cardNumber.replace(/\s+/g, ""),
+            expirationDate: (() => {
+              const cleanDate = cardData.expirationDate.replace(/\s+/g, "");
+              const [mm, yy] = cleanDate.split("/");
+              return `20${yy}/${mm}`;
+            })(),
+            cvv: cardData.cvv,
+            amount: summary.finalTotal,
+            customerId: customerId,
+            invoiceNumber: invoiceNumber,
+          }),
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.message || "Payment failed");
+      }
+      toast.success("Payment done");
+    } catch (err: any) {
+      console.error("Pay error:", err);
+      toast.error(err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function handleC2PPay() {
+    if (
+      !c2pData.originMobile ||
+      !c2pData.destinationMobile ||
+      !c2pData.destinationId ||
+      !c2pData.purchaseCode
+    ) {
+      toast.error("Fill all fields");
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/payment/c2p`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            origin_mobile_number: normalizePhone(c2pData.originMobile),
+            destination_mobile_number: c2pData.destinationMobile,
+            destination_id: c2pData.destinationId,
+            payment_reference: c2pData.purchaseCode,
+            amount: summary.finalTotal,
+          }),
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.message || "C2P Payment failed");
+      toast.success("Pago C2P exitoso");
+    } catch (err: any) {
+      console.error("C2P error:", err);
+      toast.error(err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  const { placeholder: defaultCardPlace, ...cardNumberProps } =
+    getCardNumberProps({
+      onChange: (e: any) =>
+        setCardData({ ...cardData, cardNumber: e.target.value }),
+    });
 
   return (
     <Box w="100%" mt={8}>
       <Heading as="h2" size="lg" color="#4A7C59" mb={4}>
-        Online Payment
+        Bolivares
       </Heading>
 
       <Tabs.Root
@@ -79,13 +153,13 @@ export default function OnlinePaymentUI() {
         colorScheme="green"
       >
         <Tabs.List mb="1em">
-          <Tabs.Trigger value="mobilePayment">
-            Mobile Payment (C2P)
+          <Tabs.Trigger value="mobilePayment">Pago móvil (C2P)</Tabs.Trigger>
+          <Tabs.Trigger value="cardPayment">
+            Tarjeta de Débito / Crédito
           </Tabs.Trigger>
-          <Tabs.Trigger value="cardPayment">Debit / Credit Card</Tabs.Trigger>
         </Tabs.List>
 
-        {/* Mobile Payment Tab */}
+        {/* Pestaña de Pago Móvil */}
         <Tabs.Content
           value="mobilePayment"
           bg="white"
@@ -95,122 +169,88 @@ export default function OnlinePaymentUI() {
         >
           <VStack align="stretch">
             <Text color="gray.600">
-              Make the payment using the C2P service from Mercantil or another
-              bank.
+              Realice el pago usando el servicio C2P de Mercantil u otro banco.
             </Text>
-            <Box>
-              <Text color="gray.700">Your mobile phone number</Text>
-              <Input placeholder="04xx-xxx-xxxx" size="lg" />
-            </Box>
-            <Box>
-              <Text color="gray.700">Temporary Purchase Code (OTP)</Text>
-              <Input placeholder="Enter the 6-digit code" size="lg" />
-              <Text>
-                <Icon as={BsInfo} color="blue.500" mr={2} />
-                Generate this code in your bank’s application. It is a
-                one-time-use code.
-              </Text>
-            </Box>
+
+            <Input
+              placeholder="Origen (Móvil)"
+              value={c2pData.originMobile}
+              onChange={(e) =>
+                setC2pData({ ...c2pData, originMobile: e.target.value })
+              }
+            />
+            <Input
+              placeholder="Destino (Móvil)"
+              value={c2pData.destinationMobile}
+              disabled
+            />
+            <Input
+              placeholder="Identificación destino"
+              value={c2pData.destinationId}
+              disabled
+            />
+            <Input
+              placeholder="Código de compra (Purchase code)"
+              value={c2pData.purchaseCode}
+              onChange={(e) =>
+                setC2pData({ ...c2pData, purchaseCode: e.target.value })
+              }
+            />
+            <Button colorScheme="green" onClick={handleC2PPay}>
+              Realizar Pago C2P
+            </Button>
           </VStack>
         </Tabs.Content>
 
-        {/* Card Payment Tab */}
+        {/* Pestaña de Pago con Tarjeta */}
         <Tabs.Content
           value="cardPayment"
           bg="white"
-          p={{ base: 4, md: 6 }}
           borderRadius="md"
           shadow="sm"
         >
-          <VStack align="stretch">
-            <Box>
-              <Text color="gray.700">Card Number</Text>
+          <Box mx="auto" p={4}>
+            <Heading size="md" mb={4}>
+              Pago tarjeta con 2FA
+            </Heading>
+            <VStack align="stretch">
               <Input
-                name="cardNumber"
-                placeholder="0000 0000 0000 0000"
-                size="lg"
+                {...cardNumberProps}
+                placeholder={"Número de tarjeta"}
                 value={cardData.cardNumber}
-                onChange={handleCardDataChange}
               />
-            </Box>
-
-            <Grid templateColumns="repeat(2, 1fr)" gap={4}>
-              <Box>
-                <Text color="gray.700">Expiration Date</Text>
-                <Input
-                  name="expirationDate"
-                  placeholder="MM/YYYY"
-                  size="lg"
-                  type="date"
-                  value={cardData.expirationDate}
-                  onChange={handleCardDataChange}
-                />
-              </Box>
-              <Box>
-                <Text color="gray.700">CVV</Text>
-                <Input
-                  name="cvv"
-                  placeholder="123"
-                  size="lg"
-                  value={cardData.cvv}
-                  onChange={handleCardDataChange}
-                />
-              </Box>
-            </Grid>
-
-            <Box>
-              <Text color="gray.700">Account Type (only for Debit Card)</Text>
-              <RadioGroup.Root
-                name="accountType"
-                // value={cardData.accountType}
-                // onChange={handleAccountTypeChange}
-                // value={cardData.accountType}
-                onValueChange={handleAccountTypeChange}
-                defaultValue={"ca"}
-              >
-                <HStack>
-                  {items.map((item) => (
-                    <RadioGroup.Item key={item.value} value={item.value}>
-                      <RadioGroup.ItemHiddenInput />
-                      <RadioGroup.ItemIndicator />
-                      <RadioGroup.ItemText>{item.label}</RadioGroup.ItemText>
-                    </RadioGroup.Item>
-                  ))}
-                </HStack>
-              </RadioGroup.Root>
-            </Box>
-
-            <Box>
-              <Text color="gray.700">Telephone PIN (only for Debit Card)</Text>
               <Input
-                name="telephonePin"
-                placeholder="Enter your telephone PIN"
-                type="password"
-                size="lg"
-                value={cardData.telephonePin}
-                onChange={handleCardDataChange}
+                {...getExpiryDateProps({
+                  onChange: (e: any) =>
+                    setCardData({
+                      ...cardData,
+                      expirationDate: e.target.value,
+                    }),
+                })}
+                value={cardData.expirationDate}
               />
-              <Text>
-                <Icon as={BsInfo} color="blue.500" mr={2} />
-                Required to process payments with Mercantil Debit Card.
-              </Text>
-            </Box>
-            <Button
-              colorScheme="green"
-              size="lg"
-              onClick={handleCardPaymentSubmit}
-              mt={4}
-            >
-              Submit
-            </Button>
-          </VStack>
+              <Input
+                {...getCVCProps({
+                  onChange: (e: any) =>
+                    setCardData({ ...cardData, cvv: e.target.value }),
+                })}
+                value={cardData.cvv}
+              />
+              <Input
+                name="amount"
+                placeholder="Monto"
+                type="number"
+                value={summary.finalTotal.toFixed(2)}
+                disabled
+              />
+
+              <Button colorScheme="green" onClick={handlePay}>
+                {isSubmitting ? <Spinner /> : "Pagar"}
+              </Button>
+            </VStack>
+          </Box>
         </Tabs.Content>
       </Tabs.Root>
     </Box>
   );
 }
-
-const items = [
-  { label: "Checking", value: "ca" },
-  { label: "Saving", value: "sa" },
-];

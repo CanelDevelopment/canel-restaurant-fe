@@ -14,9 +14,8 @@ import {
   Image,
   Flex,
   Center,
-  // Icon,
 } from "@chakra-ui/react";
-import type { ReactNode } from "react";
+// import type { ReactNode } from "react";
 import DashIcon1 from "/admin/dashMeterIcon.svg";
 import DashIcon2 from "/admin/dashincomingorder.svg";
 import DashIcon3 from "/admin/dashpos.svg";
@@ -28,19 +27,11 @@ import DashIcon8 from "/admin/dashrole.svg";
 import DashIcon9 from "/admin/dashbusinesssettings.svg";
 import { FaChevronDown } from "react-icons/fa";
 import { IoMenu } from "react-icons/io5";
-import { useNavigate } from "react-router-dom";
-import { useLocation } from "react-router-dom";
-// import { IoLogOut } from "react-icons/io5";
-// import { authClient } from "@/provider/user.provider";
-// import toast from "react-hot-toast";
-
-interface SidebarProps {
-  children: ReactNode;
-}
+import { useNavigate, useLocation } from "react-router-dom";
 
 const menuItems = [
   {
-    label: "Dashboard",
+    label: "Tablero",
     icon: <Image src={DashIcon1} boxSize="24px" objectFit="contain" />,
     highlightIcon: (
       <Image
@@ -50,10 +41,10 @@ const menuItems = [
       />
     ),
     link: "/dashboard",
-    exact: true, // Add exact prop for dashboard
+    exact: true,
   },
   {
-    label: "Incoming Orders",
+    label: "Pedidos Entrantes",
     icon: <Image src={DashIcon2} boxSize="24px" objectFit="contain" />,
     highlightIcon: (
       <Image
@@ -65,7 +56,7 @@ const menuItems = [
     link: "/dashboard/incoming_orders",
   },
   {
-    label: "Point of Sale (POS)",
+    label: "Punto de Venta (POS)",
     icon: <Image src={DashIcon3} boxSize="24px" objectFit="contain" />,
     highlightIcon: (
       <Image
@@ -77,7 +68,7 @@ const menuItems = [
     link: "/dashboard/point_of_sale",
   },
   {
-    label: "Customers List",
+    label: "Lista de Clientes",
     icon: <Image src={DashIcon4} boxSize="24px" objectFit="contain" />,
     highlightIcon: (
       <Image
@@ -89,7 +80,7 @@ const menuItems = [
     link: "/dashboard/customer_list",
   },
   {
-    label: "Food Catalogue",
+    label: "Catálogo de Comida",
     link: "/dashboard/food_catalogue",
     icon: (
       <Box display="flex" alignItems="center" justifyContent="center">
@@ -106,26 +97,14 @@ const menuItems = [
       </Box>
     ),
     subItems: [
-      {
-        label: "Food Category",
-        link: "/dashboard/food_category",
-      },
-      {
-        label: "Food Item",
-        link: "/dashboard/food_item",
-      },
-      {
-        label: "AddOn Category",
-        link: "/dashboard/addon_category",
-      },
-      {
-        label: "AddOn Item",
-        link: "/dashboard/addon_item",
-      },
+      { label: "Categoría de Comida", link: "/dashboard/food_category" },
+      { label: "Artículo de Comida", link: "/dashboard/food_item" },
+      { label: "Categoría de Complementos", link: "/dashboard/addon_category" },
+      { label: "Artículo de Complemento", link: "/dashboard/addon_item" },
     ],
   },
   {
-    label: "Branch Management",
+    label: "Gestión de Sucursales",
     icon: <Image src={DashIcon6} boxSize="24px" objectFit="contain" />,
     highlightIcon: (
       <Image
@@ -137,7 +116,7 @@ const menuItems = [
     link: "/dashboard/branch_management",
   },
   {
-    label: "Staff Management",
+    label: "Gestión de Personal",
     icon: <Image src={DashIcon7} boxSize="24px" objectFit="contain" />,
     highlightIcon: (
       <Image
@@ -161,7 +140,7 @@ const menuItems = [
     link: "/dashboard/role_management",
   },
   {
-    label: "Business Settings",
+    label: "Configuración del Negocio",
     icon: <Image src={DashIcon9} boxSize="24px" objectFit="contain" />,
     highlightIcon: (
       <Image
@@ -174,29 +153,19 @@ const menuItems = [
   },
 ];
 
-export const Sidebar = ({ children }: SidebarProps) => {
+export const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(false);
-
   const [isSidebarOpen] = useState(false);
   const [hovered, setHovered] = useState<string | null>(null);
 
   const navigate = useNavigate();
   const location = useLocation();
 
-  const isSubItemActive = (subItems: { link: string }[] = []) => {
-    return subItems.some((sub) => location.pathname.startsWith(sub.link));
-  };
+  const isSubItemActive = (subItems: { link: string }[] = []) =>
+    subItems.some((sub) => location.pathname.startsWith(sub.link));
 
-  const isItemActive = (link: string, exact: boolean = false) => {
-    if (exact) {
-      return location.pathname === link;
-    }
-    return (
-      location.pathname.startsWith(link) &&
-      (link !== "/dashboard" || location.pathname === "/dashboard")
-    );
-  };
-
+  const isItemActive = (link: string, exact: boolean = false) =>
+    exact ? location.pathname === link : location.pathname.startsWith(link);
 
   return (
     <Flex
@@ -206,14 +175,14 @@ export const Sidebar = ({ children }: SidebarProps) => {
       minH="100vh"
       h="100%"
       zIndex="10"
-      flex={1}
+      // flex={1}
     >
       <Box
         w={["20", "24", "24", "20"]}
         bg={"DarkGreen"}
-        className={` text-white transition-all duration-300`}
+        className="text-white transition-all duration-300"
       >
-        {/* For Small Screen */}
+        {/* Small Screen Drawer */}
         <Drawer.Root
           open={isOpen}
           placement="start"
@@ -224,13 +193,10 @@ export const Sidebar = ({ children }: SidebarProps) => {
               <IoMenu size={26} className="hover:text-[Cgreen]" />
             </Center>
           </DrawerTrigger>
-
           <DrawerBackdrop />
-          
           <DrawerPositioner>
             <DrawerContent bg="#3c5646" color="white">
               <DrawerCloseTrigger />
-
               <DrawerBody p={0}>
                 <VStack align="start" gap={0}>
                   {menuItems.map((item, index) =>
@@ -255,7 +221,6 @@ export const Sidebar = ({ children }: SidebarProps) => {
                             >
                               {item.label}
                             </Text>
-
                             <Accordion.ItemIndicator asChild ml={"auto"}>
                               <FaChevronDown color="white" />
                             </Accordion.ItemIndicator>
@@ -270,7 +235,6 @@ export const Sidebar = ({ children }: SidebarProps) => {
                                   key={subIndex}
                                   mt={2}
                                   onClick={() => navigate(subItem.link)}
-                                  // borderBottom={"1px solid #708D7B"}
                                   py={1}
                                   w={"full"}
                                 >
@@ -310,7 +274,7 @@ export const Sidebar = ({ children }: SidebarProps) => {
           </DrawerPositioner>
         </Drawer.Root>
 
-        {/* For Large Screen */}
+        {/* Large Screen Sidebar */}
         <VStack align={["center", "center", "start"]}>
           {menuItems.map((item, index) =>
             item.subItems ? (
@@ -404,24 +368,13 @@ export const Sidebar = ({ children }: SidebarProps) => {
               </Flex>
             )
           )}
-          {/* <Flex
-            justifyContent={"center"}
-            w={"full"}
-            alignItems={"center"}
-            cursor={"pointer"}
-            onClick={handleSignOut}
-            _hover={{ bgColor: "#4a6d58" }}
-            py={2}
-          >
-            <Icon as={IoLogOut} size={"xl"} _hover={{ color: "red" }} />
-          </Flex> */}
         </VStack>
       </Box>
 
-      {/* Main content */}
-      <Box bgColor={"#f3f3f3"} flex={1} overflowX={"hidden"}>
+      {/* Main Content */}
+      {/* <Box bgColor={"#f3f3f3"} flex={1} overflowX={"hidden"}>
         {children}
-      </Box>
+      </Box> */}
     </Flex>
   );
 };

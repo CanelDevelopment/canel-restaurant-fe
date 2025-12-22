@@ -19,12 +19,14 @@ import { useState } from "react";
 interface CategoryForm {
   name: string;
   description: string;
+  volumeDiscountTier1?: number;
+  volumeDiscountTier2?: number;
 }
 
 export const NewFoodCategoryContent = () => {
   const options = [
-    { key: "1", label: "Publish", value: true },
-    { key: "2", label: "Pending", value: false },
+    { key: "1", label: "PUBLICADO", value: true },
+    { key: "2", label: "PENDING", value: false },
   ];
 
   const collection = createListCollection({
@@ -40,16 +42,42 @@ export const NewFoodCategoryContent = () => {
   // default Pending (false)
   const [availability, setAvailability] = useState("2");
 
+  // State to toggle the discount section
+  const [enableVolumeDiscount, setEnableVolumeDiscount] = useState(false);
+
   async function onSubmit(values: CategoryForm) {
+    // Construct the payload based on the "Aggregate & Apply" theory
     const payload = {
       ...values,
-      visibility: availability === "1" ? true : false, // map selected key to boolean
+      visibility: availability === "1",
+      // We structure the rules as a JSON object for the backend
+      volumeDiscountRules: enableVolumeDiscount
+        ? {
+            enabled: true,
+            type: "fixed_amount_off",
+            tiers: [
+              {
+                minQty: 2,
+                discountAmount: Number(values.volumeDiscountTier1) || 0,
+              },
+              {
+                minQty: 3,
+                discountAmount: Number(values.volumeDiscountTier2) || 0,
+              },
+            ],
+          }
+        : null, // Send null if disabled
     };
 
-    mutate(payload, {
+    // Clean up flat fields before sending if you prefer not to send them flat
+    // delete payload.volumeDiscountTier1;
+    // delete payload.volumeDiscountTier2;
+
+    mutate(payload as any, {
       onSuccess: () => {
         reset();
-        setAvailability("2"); // reset back to Pending
+        setAvailability("2");
+        setEnableVolumeDiscount(false);
       },
     });
   }
@@ -130,8 +158,8 @@ export const NewFoodCategoryContent = () => {
         flexDirection={["column", "column", "row"]}
         bgColor={"#FFF"}
       >
-        <Box p={[6, 6, 2, 6]} display={"flex"} gapX={16}>
-          <Flex flexDirection={"column"} gapY={5} wrap="wrap">
+        <Box p={[6, 6, 2, 6]} display={"flex"} gapX={16} w="full">
+          <Flex flexDirection={"column"} gapY={5} wrap="wrap" flex={1}>
             {/* Food Category */}
             <Box
               display={"flex"}
@@ -147,13 +175,13 @@ export const NewFoodCategoryContent = () => {
                 minW={["200px", "500px"]}
               >
                 <Text fontFamily={"AmsiProCond"} color={"#000"} minW="150px">
-                  Categoría de Comida
+                  Nombre de la categoría
                 </Text>
                 <Input
-                  placeholder="Ingrese el nom de la categoría de comida"
+                  placeholder="Ej: Cheesecakes"
                   border={"none"}
                   bg="gray.100"
-                  {...register("name")}
+                  {...register("name", { required: true })}
                 />
               </Box>
             </Box>
@@ -176,6 +204,94 @@ export const NewFoodCategoryContent = () => {
                 {...register("description")}
               />
             </Box>
+
+            {/* --- NEW VOLUME DISCOUNT SECTION --- */}
+            <Separator orientation="horizontal" my={2} />
+            <Box
+              display={"flex"}
+              flexDirection="column"
+              gap={3}
+              bg="#F9F9F9"
+              p={4}
+              rounded="md"
+              border="1px dashed #d1d1d1"
+            >
+              <Checkbox.Root
+                colorPalette={"green"}
+                checked={enableVolumeDiscount}
+                onCheckedChange={(e) =>
+                  setEnableVolumeDiscount(e.checked as boolean)
+                }
+              >
+                <Checkbox.HiddenInput />
+                <Checkbox.Control
+                  bgColor={"#fff"}
+                  border={"1px solid #949494"}
+                />
+                <Checkbox.Label
+                  fontFamily={"AmsiProCond-Black"}
+                  color="#000"
+                  fontSize="lg"
+                >
+                  Activar Descuento por Volumen (Mix & Match)
+                </Checkbox.Label>
+              </Checkbox.Root>
+
+              <Text fontSize="sm" color="gray.500" mb={2}>
+                Si se activa, el precio bajará automáticamente cuando el cliente
+                compre múltiples productos de esta categoría, sin importar el
+                sabor.
+              </Text>
+
+              {enableVolumeDiscount && (
+                <Flex gap={6} direction={["column", "row"]}>
+                  <Box flex={1}>
+                    <Text
+                      fontFamily={"AmsiProCond"}
+                      fontSize="sm"
+                      mb={1}
+                      color="black"
+                    >
+                      Descuento por Unidad (Cant. 2)
+                    </Text>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      placeholder="Ej: 1.00 (baja $1)"
+                      bg="white"
+                      borderColor="gray.300"
+                      {...register("volumeDiscountTier1")}
+                    />
+                    <Text fontSize="xs" color="gray.400" mt={1}>
+                      Se aplica si compran 2 items.
+                    </Text>
+                  </Box>
+
+                  <Box flex={1}>
+                    <Text
+                      fontFamily={"AmsiProCond"}
+                      fontSize="sm"
+                      mb={1}
+                      color="black"
+                    >
+                      Descuento por Unidad (Cant. 3+)
+                    </Text>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      placeholder="Ej: 2.00 (baja $2)"
+                      bg="white"
+                      borderColor="gray.300"
+                      {...register("volumeDiscountTier2")}
+                    />
+                    <Text fontSize="xs" color="gray.400" mt={1}>
+                      Se aplica si compran 3 o más items.
+                    </Text>
+                  </Box>
+                </Flex>
+              )}
+            </Box>
+            {/* --- END VOLUME DISCOUNT SECTION --- */}
           </Flex>
 
           <Box>
@@ -198,7 +314,7 @@ export const NewFoodCategoryContent = () => {
                 <Checkbox.Control
                   bgColor={"#EBEBEB"}
                   border={"1px solid #949494"}
-                  color={"green"}
+                  color={"#111"}
                 />
               </Checkbox.Root>
             </Box>

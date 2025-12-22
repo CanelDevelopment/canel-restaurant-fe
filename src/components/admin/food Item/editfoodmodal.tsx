@@ -1,12 +1,10 @@
-// src/components/product/EditProductModal.tsx
-
 import {
   Image,
-  Spinner,
   Grid,
   GridItem,
   createListCollection,
   Portal,
+  HStack,
 } from "@chakra-ui/react";
 import {
   Dialog,
@@ -21,15 +19,17 @@ import {
 import { useState, useEffect } from "react";
 import { useUpdateProduct } from "@/hooks/product/useupdateproduct";
 import { useFetchCategories } from "@/hooks/category/usefetchcategory";
+import type { ProductVariant } from "./newitemcontent";
 
-// Define the shape of the product data the modal needs
 interface ProductData {
   id: string;
   name: string;
   description: string;
   price: string;
   photo: string;
+  discount: string;
   categoryId: string | null;
+  variants: ProductVariant[];
 }
 
 interface EditProductModalProps {
@@ -44,52 +44,59 @@ export const EditProductModal = ({
   product,
 }: EditProductModalProps) => {
   const { mutate: updateProduct, isPending } = useUpdateProduct();
-  const { data: categories, isLoading: isLoadingCategories } =
-    useFetchCategories();
-
+  const { data: categories } = useFetchCategories();
+  console.log(product);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-
   const [newImageFile, setNewImageFile] = useState<File | null>(null);
-
-  const [categoryId, setCategoryId] = useState("");
+  const [categoryId, setCategoryId] = useState<string[]>([]);
   const [categoryOptions, setCategoryOptions] = useState<any[]>([]);
-  const [selectedCategoryText, setSelectedCategoryText] =
-    useState("Select category");
+  const [selectedCategoryText, setSelectedCategoryText] = useState(
+    "Seleccionar categoría"
+  );
+  const [discount, setDiscount] = useState("0");
+  const [variants, setVariants] = useState<{ name: string; price: number }[]>(
+    []
+  );
 
-  const categoryCollection = createListCollection({
-    items: categoryOptions,
-  });
+  const categoryCollection = createListCollection({ items: categoryOptions });
 
   useEffect(() => {
     if (categories) {
-      const opts = categories.map((cat: any) => ({
-        key: cat.id,
-        textValue: cat.name,
-        children: cat.name,
-      }));
-      setCategoryOptions(opts);
+      setCategoryOptions(
+        categories.map((cat: any) => ({
+          value: cat.id,
+          label: cat.name,
+        }))
+      );
     }
+
     if (product) {
       setName(product.name);
       setDescription(product.description);
       setPrice(product.price.replace("Ref ", ""));
       setImagePreview(product.photo);
-      setCategoryId(product.categoryId || "");
-
+      setCategoryId(product.categoryId ? [product.categoryId] : []);
       setNewImageFile(null);
+      setDiscount(product.discount);
+
+      if (product?.variants) {
+        setVariants(product.variants);
+      } else {
+        setVariants([{ name: "", price: 0 }]);
+      }
 
       if (categories && product.categoryId) {
         const currentCategory = categories.find(
           (cat) => cat.id === product.categoryId
         );
         setSelectedCategoryText(
-          currentCategory ? currentCategory.name : "Select category"
+          currentCategory ? currentCategory.name : "Seleccionar categoría"
         );
       } else {
-        setSelectedCategoryText("Select category");
+        setSelectedCategoryText("Seleccionar categoría");
       }
     }
   }, [product, categories]);
@@ -98,7 +105,6 @@ export const EditProductModal = ({
     const file = event.target.files?.[0];
     if (file) {
       setNewImageFile(file);
-
       const previewUrl = URL.createObjectURL(file);
       setImagePreview(previewUrl);
     }
@@ -107,14 +113,18 @@ export const EditProductModal = ({
   const handleSaveChanges = () => {
     if (!product) return;
 
+    const finalCategoryId = categoryId[0] || null;
+
     updateProduct(
       {
         id: product.id,
         name,
         description,
         price,
-        categoryId,
+        discount: Number(discount),
+        categoryId: finalCategoryId,
         image: newImageFile,
+        variants,
       },
       { onSuccess: () => onClose() }
     );
@@ -136,25 +146,24 @@ export const EditProductModal = ({
             py={7}
             roundedTop={"3xl"}
           >
-            Edit Product
+            Editar Producto
           </Dialog.Header>
           <Dialog.CloseTrigger />
           <Dialog.Body>
             <Grid templateColumns="repeat(5, 1fr)" gap={6}>
               <GridItem colSpan={2}>
                 <Box>
-                  <Text mb={2}>Product Image</Text>
+                  <Text mb={2}>Imagen del Producto</Text>
                   <Image
                     loading="lazy"
                     src={imagePreview || "https://via.placeholder.com/150"}
-                    alt="Product image"
+                    alt="Imagen del producto"
                     borderRadius="md"
                     boxSize="250px"
                     objectFit="cover"
                   />
-                  {/* --- NEW: Button and hidden input for changing image --- */}
                   <Button as="label" mt={3} size="sm" width="100%">
-                    Change Image
+                    Cambiar Imagen
                     <input
                       id="file-upload"
                       type="file"
@@ -165,6 +174,7 @@ export const EditProductModal = ({
                   </Button>
                 </Box>
               </GridItem>
+
               <GridItem
                 colSpan={3}
                 display="flex"
@@ -172,31 +182,27 @@ export const EditProductModal = ({
                 gap={4}
               >
                 <Box>
-                  <Text mb={2}>Name</Text>
+                  <Text mb={2}>Nombre</Text>
                   <Input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Product Name"
+                    placeholder="Nombre del Producto"
                   />
                 </Box>
+
                 <Box>
-                  <Text mb={2}>Category</Text>
+                  <Text mb={2}>Categoría</Text>
                   <Select.Root
                     collection={categoryCollection}
-                    value={[categoryId]}
+                    value={categoryId}
                     onValueChange={(details) => {
-                      console.log(details.value[0]);
-                      console.log(categoryOptions);
-                      if (details.value.length >= 0) {
-                        const newId = details.value[0];
-                        const selectedItem = categoryOptions.find(
-                          (opt) => opt.key === newId
-                        );
-                        if (selectedItem) {
-                          setCategoryId(newId);
-                          setSelectedCategoryText(selectedItem.textValue);
-                        }
-                      }
+                      setCategoryId(details.value);
+
+                      const selectedItem = categoryOptions.find(
+                        (opt) => opt.value === details.value[0]
+                      );
+                      if (selectedItem)
+                        setSelectedCategoryText(selectedItem.label);
                     }}
                   >
                     <Select.Control>
@@ -204,30 +210,29 @@ export const EditProductModal = ({
                         <Select.ValueText>
                           {selectedCategoryText}
                         </Select.ValueText>
+                        <Select.Indicator />
                       </Select.Trigger>
                     </Select.Control>
                     <Portal>
-                      <Select.Positioner>
-                        <Select.Content>
-                          {isLoadingCategories ? (
-                            <Box p={4} textAlign="center">
-                              <Spinner size="md" />
-                            </Box>
-                          ) : (
-                            categoryCollection.items.map((item) => (
-                              // console.log("THis is item:", item),
-                              <Select.Item key={item.key} item={item.key}>
-                                {item.children}
-                              </Select.Item>
-                            ))
-                          )}
+                      <Select.Positioner zIndex={1400}>
+                        <Select.Content zIndex={1400} bg="white">
+                          {categoryCollection.items.map((item) => (
+                            <Select.Item
+                              key={item.key}
+                              item={item.value}
+                              cursor="pointer"
+                            >
+                              {item.label}
+                            </Select.Item>
+                          ))}
                         </Select.Content>
                       </Select.Positioner>
                     </Portal>
                   </Select.Root>
                 </Box>
+
                 <Box>
-                  <Text mb={2}>Price</Text>
+                  <Text mb={2}>Precio</Text>
                   <InputGroup left={"Ref"}>
                     <Input
                       type="number"
@@ -237,29 +242,94 @@ export const EditProductModal = ({
                     />
                   </InputGroup>
                 </Box>
+
                 <Box>
-                  <Text mb={2}>Description</Text>
+                  <Text mb={2}>descuento</Text>
+                  <InputGroup left={"Ref"}>
+                    <Input
+                      type="number"
+                      value={discount}
+                      onChange={(e) => setDiscount(e.target.value)}
+                      placeholder="10.99"
+                    />
+                  </InputGroup>
+                </Box>
+
+                <Box>
+                  <Text mb={2}>Descripción</Text>
                   <Textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Product Description"
+                    placeholder="Descripción del Producto"
                     rows={4}
                   />
+                </Box>
+
+                <Box>
+                  <Text mb={2}>Variantes</Text>
+
+                  {variants.map((variant, index) => (
+                    <HStack key={index} mb={2}>
+                      <Input
+                        placeholder="Nombre variante"
+                        value={variant.name}
+                        onChange={(e) => {
+                          const updated = [...variants];
+                          updated[index].name = e.target.value;
+                          setVariants(updated);
+                        }}
+                      />
+
+                      <Input
+                        type="number"
+                        placeholder="Precio"
+                        value={variant.price}
+                        onChange={(e) => {
+                          const updated = [...variants];
+                          updated[index].price = Number(e.target.value);
+                          setVariants(updated);
+                        }}
+                      />
+
+                      <Button
+                        colorScheme="red"
+                        onClick={() => {
+                          const updated = variants.filter(
+                            (_, i) => i !== index
+                          );
+                          setVariants(updated);
+                        }}
+                      >
+                        Delete
+                      </Button>
+                    </HStack>
+                  ))}
+
+                  <Button
+                    mt={2}
+                    size="sm"
+                    onClick={() =>
+                      setVariants([...variants, { name: "", price: 0 }])
+                    }
+                  >
+                    + Add Variant
+                  </Button>
                 </Box>
               </GridItem>
             </Grid>
           </Dialog.Body>
+
           <Dialog.Footer>
             <Button variant="ghost" mr={3} onClick={onClose}>
-              Cancel
+              Cancelar
             </Button>
             <Button
               colorScheme="teal"
               onClick={handleSaveChanges}
               disabled={isPending}
-              loadingText="Saving..."
+              loadingText="Guardando..."
             >
-              Save Changes
+              Guardar Cambios
             </Button>
           </Dialog.Footer>
         </Dialog.Content>

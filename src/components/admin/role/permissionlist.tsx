@@ -24,18 +24,12 @@ export const PermissionList = ({
 
     let filteredData = rolePermissions;
 
-    // --- FIX APPLIED HERE ---
-    // The condition is updated to check for "All Branches".
-    // If a specific branch is selected (and it's not "All Branches"), filter by its name.
-    // Otherwise, the branch filter is skipped entirely.
     if (selectedBranchText && selectedBranchText !== "All Branches") {
       filteredData = filteredData.filter(
         (permission) => permission.branch === selectedBranchText
       );
     }
-    // --- END OF FIX ---
 
-    // The search filter is then applied to the result of the branch filter.
     if (searchQuery) {
       filteredData = filteredData.filter((permission) =>
         permission.role.toLowerCase().includes(searchQuery.toLowerCase())
@@ -57,7 +51,7 @@ export const PermissionList = ({
     toast.error(`Error fetching permissions: ${error.message}`);
     return (
       <Center p={10}>
-        <Text color="red.500">Failed to load permissions.</Text>
+        <Text color="red.500">Error al cargar los permisos.</Text>
       </Center>
     );
   }
@@ -65,7 +59,7 @@ export const PermissionList = ({
   if (!selectedBranchText) {
     return (
       <Center p={10}>
-        <Text>Please select a branch to view permissions.</Text>
+        <Text>Seleccione una sucursal para ver los permisos.</Text>
       </Center>
     );
   }
@@ -105,7 +99,7 @@ export const PermissionList = ({
         ))
       ) : (
         <Center p={10}>
-          <Text>No permissions found for the current selection.</Text>
+          <Text>No se encontraron permisos para la selección actual.</Text>
         </Center>
       )}
     </VStack>

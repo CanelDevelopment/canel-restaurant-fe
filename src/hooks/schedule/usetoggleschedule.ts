@@ -21,12 +21,11 @@ export const useToggleSchedule = () => {
       return response.data;
     },
     onSuccess: (data) => {
-      toast.success(data.message || "Schedule updated!");
-
+      toast.success(data.message || "¡Horario actualizado!");
       queryClient.invalidateQueries({ queryKey: ["schedules"] });
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to update schedule.");
+      toast.error(error.message || "Error al actualizar el horario.");
     },
   });
 };

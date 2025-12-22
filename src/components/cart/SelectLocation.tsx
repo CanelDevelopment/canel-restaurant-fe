@@ -9,11 +9,18 @@ import { useFreeAreas } from "@/hooks/branch/usefetchareas";
 import React, { useState } from "react"; // <-- Import useState
 import { IoIosArrowDown } from "react-icons/io";
 
-
 type SelectLocationProps = {
   cityName: string;
+  isVisible?: boolean;
 };
-export const SelectLocation: React.FC<SelectLocationProps> = ({ cityName }) => {
+export const SelectLocation: React.FC<SelectLocationProps> = ({
+  cityName,
+  isVisible,
+}) => {
+  if (!isVisible) {
+    return null;
+  }
+
   const { data: areas, isLoading, error } = useFreeAreas(cityName);
 
   const [selectedValue, setSelectedValue] = useState<string | null>(() =>
@@ -65,8 +72,8 @@ export const SelectLocation: React.FC<SelectLocationProps> = ({ cityName }) => {
       <Select.Root
         collection={collection}
         size="md"
-        onValueChange={handleSelectionChange} 
-        value={selectedValue ? [selectedValue] : []} 
+        onValueChange={handleSelectionChange}
+        value={selectedValue ? [selectedValue] : []}
       >
         <Select.HiddenSelect />
         <Select.Control>

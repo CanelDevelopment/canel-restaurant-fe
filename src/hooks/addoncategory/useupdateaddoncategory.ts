@@ -27,14 +27,14 @@ export const useUpdateAddonCategory = () => {
         return response.data;
       },
       onSuccess: (data) => {
-        toast.success(data.message || "Addon Category updated successfully!");
+        toast.success(data.message || "¡Categoría de complemento actualizada con éxito!");
         queryClient.invalidateQueries({ queryKey: ["items"] });
       },
 
       onError: (error: any) => {
         const backendMessage = error?.response?.data?.message;
         toast.error(
-          backendMessage || error.message || "Failed to update addon category."
+          backendMessage || error.message || "Error al actualizar la categoría de complemento."
         );
         console.error("Failed to update addon category:", error);
       },

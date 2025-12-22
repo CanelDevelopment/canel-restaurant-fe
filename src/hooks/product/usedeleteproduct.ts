@@ -20,11 +20,11 @@ export const useDeleteProduct = () => {
     mutationKey: ["delete product"],
     retry: false,
     onSuccess: () => {
-      toast.success("Product deleted successfully!");
+      toast.success("¡Producto eliminado con éxito!");
       queryClient.invalidateQueries({ queryKey: ["fetch-product"] });
     },
     onError: (error) => {
-      toast.error(error.response?.data.message || "Something went wrong");
+      toast.error(error.response?.data.message || "¡Algo salió mal!");
     },
   });
 };

@@ -20,12 +20,12 @@ export const useDeleteBranch = () => {
     },
 
     onSuccess: (data) => {
-      toast.success(data.message || "Branch deleted successfully!");
+      toast.success(data.message || "¡Sucursal eliminada con éxito!");
       queryClient.invalidateQueries({ queryKey: ["fetch-branch"] });
     },
 
     onError: (error) => {
-      toast.error(error.response?.data.message || "Failed to delete branch.");
+      toast.error(error.response?.data.message || "Error al eliminar la sucursal.");
       console.error("Error deleting branch:", error);
     },
   });

@@ -42,7 +42,7 @@ export const CustomeSwitch: React.FC<CustomeSwitchProps> = ({
             }`}
           >
             {/* Use isChecked prop instead of local state */}
-            {isChecked && "ON"}
+            {isChecked && "EN"}
           </span>
 
           <span
@@ -50,7 +50,7 @@ export const CustomeSwitch: React.FC<CustomeSwitchProps> = ({
               isChecked ? "text-[#afdf4e]" : "text-gray-600"
             }`}
           >
-            {"OFF"}
+            {"DE"}
           </span>
 
           <span
