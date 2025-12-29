@@ -44,32 +44,41 @@ export const CartSummary: React.FC<CartSummaryProps> = () => {
 
   const summary = usePriceCalculations();
 
-  const { selectedPayment, conversionRate } = usePaymentStore(); // <- Get payment & conversion
-  console.log(conversionRate, selectedPayment)
-  // Decide currency symbol
+  const { selectedPayment, conversionRate } = usePaymentStore();
+
   const currencySymbol =
     selectedPayment === "cash"
       ? "Ref"
       : selectedPayment === "online"
-      ? "VED"
+      ? "Bs"
       : "Ref"; // Example for Bolivars / Zelle
 
   // Convert all relevant values
   const convertedSubtotal =
-    selectedPayment === "cash" ? summary.subtotal : summary.subtotal * (conversionRate || 1);
+    selectedPayment === "cash"
+      ? summary.subtotal
+      : summary.subtotal * (conversionRate || 1);
   const convertedDiscount =
-    selectedPayment === "cash" ? summary.discount : summary.discount * (conversionRate || 1);
+    selectedPayment === "cash"
+      ? summary.discount
+      : summary.discount * (conversionRate || 1);
   const convertedDelivery =
-    deliveryCost && selectedPayment !== "cash" ? deliveryCost * (conversionRate || 1) : deliveryCost;
+    deliveryCost && selectedPayment !== "cash"
+      ? deliveryCost * (conversionRate || 1)
+      : deliveryCost;
   const convertedTotal =
-    selectedPayment === "cash" ? summary.finalTotal : summary.finalTotal * (conversionRate || 1);
+    selectedPayment === "cash"
+      ? summary.finalTotal
+      : summary.finalTotal * (conversionRate || 1);
 
   useEffect(() => {
     if (cartFromStore) {
       const transformedItems: CalculationItem[] = cartFromStore.map(
         (item: CartItem) => {
           const priceToUse =
-            item.variantPrice && item.variantPrice > 0 ? item.variantPrice : item.price;
+            item.variantPrice && item.variantPrice > 0
+              ? item.variantPrice
+              : item.price;
           return {
             quantity: item.quantity,
             instructions: item.instructions || "",

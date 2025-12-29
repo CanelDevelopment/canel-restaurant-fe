@@ -6,12 +6,20 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   onSelect: (data: { address: string; lat: number; lng: number }) => void;
+  initialCenter?: { lat: number; lng: number } | null;
 }
 
-export default function MapPicker({ isOpen, onClose, onSelect }: Props) {
+export default function MapPicker({
+  isOpen,
+  onClose,
+  onSelect,
+  initialCenter,
+}: Props) {
   const mapRef = useRef<HTMLDivElement | null>(null);
   const [currentAddress, setCurrentAddress] = useState("");
   const markerRef = useRef<google.maps.Marker | null>(null);
+
+  const selectedCity = localStorage.getItem("selectedCity");
 
   useEffect(() => {
     if (!isOpen) return;
@@ -54,6 +62,28 @@ export default function MapPicker({ isOpen, onClose, onSelect }: Props) {
         });
 
         markerRef.current = _marker;
+
+        if (initialCenter) {
+          _map.setCenter(initialCenter);
+          _marker.setPosition(initialCenter);
+
+          const geocoder = new Geocoder();
+          geocoder.geocode({ location: initialCenter }, (results, status) => {
+            if (status === "OK" && results?.[0]) {
+              setCurrentAddress(results[0].formatted_address);
+            }
+          });
+        } else if (selectedCity) {
+          const geocoder = new Geocoder();
+          geocoder.geocode({ address: selectedCity }, (results, status) => {
+            if (status === "OK" && results?.[0]) {
+              const loc = results[0].geometry.location;
+              _map.setCenter(loc);
+              _marker.setPosition(loc);
+              setCurrentAddress(results[0].formatted_address);
+            }
+          });
+        }
 
         // 6. Add Drag Listener
         _marker.addListener("dragend", () => {

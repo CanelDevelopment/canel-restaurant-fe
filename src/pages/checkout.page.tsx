@@ -1,5 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Box, Flex, Image, Spinner, Center, Text } from "@chakra-ui/react";
+import {
+  Box,
+  Flex,
+  Image,
+  Spinner,
+  Center,
+  Text,
+  Skeleton,
+} from "@chakra-ui/react";
 import {
   CheckoutForm,
   type OrderForm,
@@ -141,15 +149,6 @@ const Checkout: React.FC = () => {
       formData.append("paymentSS", formValues.paymentSS);
     }
 
-    // const orderPayload = {
-    //   ...formValues,
-    //   branchId,
-    //   type: deliveryType,
-    //   location: fullAddress,
-    // };
-
-    // console.log("Submitting order with form data:", orderPayload);
-    // createOrder({ ...orderPayload, cartId });
     createOrder(formData);
   };
 
@@ -174,7 +173,7 @@ const Checkout: React.FC = () => {
       <Link to={"/home"}>
         <Box p={6}>
           {isLogoLoading ? (
-            <Spinner />
+            <Skeleton h={"16"} />
           ) : (
             <Image
               loading="lazy"
@@ -184,7 +183,7 @@ const Checkout: React.FC = () => {
           )}
         </Box>
       </Link>
-``
+
       <FormProvider {...methods}>
         <form onSubmit={methods.handleSubmit(onSubmit)}>
           <Flex direction={{ base: "column", md: "row" }} p={6} gap={6}>

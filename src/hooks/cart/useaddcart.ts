@@ -22,10 +22,8 @@ export const useAddCart = () => {
       return await axios.post(`/cart/create`, payload);
     },
     mutationKey: ["add-cart"],
-    onSuccess: (data) => {
-      toast.success("¡Artículo agregado al carrito!");
-      console.log("Server response:", data.message);
-      // onSuccessCallback(data.cartItemId);
+    onSuccess: () => {
+      // toast.success("¡Artículo agregado al carrito!");
 
       queryClient.invalidateQueries({ queryKey: ["fetch-cart"] });
     },

@@ -168,6 +168,11 @@ export default function OnlinePaymentUI() {
           shadow="sm"
         >
           <VStack align="stretch">
+            <Text fontWeight="bold" fontSize="md" mb={2}>
+              PAGO MÓVIL Mercantil | TLF: 0424-1574090 | RIF: J-412241940 Canel
+              La Castellana C.A
+            </Text>
+
             <Text color="gray.600">
               Realice el pago usando el servicio C2P de Mercantil u otro banco.
             </Text>
@@ -190,7 +195,7 @@ export default function OnlinePaymentUI() {
               disabled
             />
             <Input
-              placeholder="Código de compra (Purchase code)"
+              placeholder="Código de compra (Introducir código C2P)"
               value={c2pData.purchaseCode}
               onChange={(e) =>
                 setC2pData({ ...c2pData, purchaseCode: e.target.value })

@@ -10,7 +10,7 @@ export const useFetchCart = () => {
     queryKey: CART_QUERY_KEY,
     queryFn: async () => {
       const response = await axios.get("/cart/fetch");
-      console.log(response.data);
+
       return response.data.data;
     },
     staleTime: 1000 * 60 * 5,

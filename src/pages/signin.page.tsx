@@ -232,7 +232,7 @@ const Signin = () => {
                 country={"us"}
                 value={phoneNumber}
                 onChange={(phone) => setPhoneNumber(phone)}
-                onlyCountries={["us", "ve", "pk"]}
+                onlyCountries={["us", "ve"]}
                 countryCodeEditable={false}
                 inputStyle={{
                   width: "100%",
@@ -253,7 +253,7 @@ const Signin = () => {
           ) : (
             <Box width="100%">
               <Text mb={2} fontSize="sm">
-                Enter the 6-digit code sent to +{phoneNumber}
+                Introduzca los 6 dígitos enviados a su WhatsApp +{phoneNumber}
               </Text>
               <Input
                 placeholder="123456"

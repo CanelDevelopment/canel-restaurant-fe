@@ -2,7 +2,7 @@ import { Box, Button, Flex, Text, Spinner, VStack } from "@chakra-ui/react";
 import React from "react";
 import { CartSummary } from "../cart/cartSummary";
 import { useFetchCart } from "@/hooks/cart/usefetchcart";
-import { usePaymentStore } from "@/store/paymentStore"; // Zustand store
+import { usePaymentStore } from "@/store/paymentStore";
 
 interface OrderSummaryProps {
   isSubmitting: boolean;
@@ -10,7 +10,7 @@ interface OrderSummaryProps {
 
 export const OrderSummary: React.FC<OrderSummaryProps> = ({ isSubmitting }) => {
   const { data } = useFetchCart();
-  const { selectedPayment, conversionRate } = usePaymentStore(); // <- get conversionRate
+  const { selectedPayment, conversionRate } = usePaymentStore();
 
   // Payment labels & symbols
   const paymentLabelMap: Record<string, string> = {
@@ -20,7 +20,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ isSubmitting }) => {
   };
   const currencySymbolMap: Record<string, string> = {
     cash: "Ref",
-    online: "$",
+    online: "Bs",
     bolivars: "Ref",
   };
   const paymentLabel = paymentLabelMap[selectedPayment] || "Efectivo";
@@ -35,7 +35,9 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ isSubmitting }) => {
               ? item.variantPrice
               : item.product.price;
           const convertedPrice =
-            selectedPayment === "cash" ? basePrice : basePrice * (conversionRate || 1);
+            selectedPayment === "cash"
+              ? basePrice
+              : basePrice * (conversionRate || 1);
 
           return (
             <VStack key={item.id} align="stretch" mb={3}>

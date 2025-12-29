@@ -295,7 +295,7 @@ export const useCartStore = create(
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         cart: state.cart,
-        totalQuantity: state.totalQuantity,
+        totalQuantity: state.cart.length,
       }),
     }
   )
@@ -304,7 +304,10 @@ export const useCartStore = create(
 // ---- Values ----
 export const useCartItems = () => useCartStore((state) => state.cart);
 export const useCartTotalQuantity = () =>
-  useCartStore((state) => state.totalQuantity);
+  useCartStore((state) => {
+    console.log("state", state);
+    return state.cart.length;
+  });
 
 // ---- Actions ----
 export const useSetCart = () => useCartStore((state) => state.setCart);

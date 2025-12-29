@@ -8,7 +8,7 @@ function OrderDeliveryInfo() {
   useEffect(() => {
     const updateDeliveryInfo = () => {
       const now = new Date();
-      const deliveryDateTime = new Date(now.getTime() + 60 * 60 * 1000);
+      const deliveryDateTime = new Date(now.getTime() + 30 * 60 * 1000);
 
       const optionsDate = { year: "numeric", month: "long", day: "numeric" };
       const formattedDate = deliveryDateTime.toLocaleDateString(
@@ -26,21 +26,20 @@ function OrderDeliveryInfo() {
       setDeliveryTime(formattedTime);
     };
 
-    // Update immediately and then every minute to keep it current
     updateDeliveryInfo();
     const intervalId = setInterval(updateDeliveryInfo, 60 * 1000);
 
-    return () => clearInterval(intervalId); // Cleanup on unmount
+    return () => clearInterval(intervalId);
   }, []);
 
   return (
     <Box bgColor={"#CCEEDF"} rounded={"lg"} px={4} py={3} mt={3}>
       <Text fontSize={"sm"}>
-        Su orden será entregada en aproximadamente 1 hora.
+        Su pedido será entregado en aproximadamente 30 minutos.{" "}
         <Text as={"span"} color={"Cbutton"} fontWeight={"Black"}>
           {deliveryDate}
         </Text>{" "}
-        at
+        en
         <Text as={"span"} color={"Cbutton"} fontWeight={"Black"}>
           {" "}
           {deliveryTime}

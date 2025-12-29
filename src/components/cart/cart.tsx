@@ -17,11 +17,11 @@ import { useFetchBranch } from "@/hooks/branch/usefetchbranch";
 import { CartItem } from "./cartItem";
 import { FrequentOrder } from "./frequentOrder";
 import { CartSummary } from "./cartSummary";
-import { SelectLocation } from "./SelectLocation";
 import OrderDeliveryInfo from "./orderdeliverytime";
 import { useCalculationStore } from "@/store/calculationStore";
 import { useFetchCurrentUser } from "@/hooks/user/usefetchuser";
 import { LoginPromptModal } from "./logininvitationmodal";
+// import { SelectLocation } from "./SelectLocation";
 // import type { Branch } from "@/pages/locationform.page";
 
 // Define the Branch interface to ensure type safety
@@ -78,8 +78,8 @@ export const Cart: React.FC = () => {
 
   const isOrderTypeSelectable = liveBranch?.orderType === "both";
 
-  const selectedArea = localStorage.getItem("selectedArea");
-  const city = localStorage.getItem("selectedCity") || "";
+  // const selectedArea = localStorage.getItem("selectedArea");
+  // const city = localStorage.getItem("selectedCity") || "";
 
   useEffect(() => {
     if (liveBranch) {
@@ -150,8 +150,6 @@ export const Cart: React.FC = () => {
     );
   }
 
-  const showLocationDropdown = orderType === "delivery" && !selectedArea;
-
   const handleCheckout = () => {
     const token =
       localStorage.getItem("token") || localStorage.getItem("accessToken");
@@ -184,14 +182,14 @@ export const Cart: React.FC = () => {
         />
       ))}
 
-      <Box width="calc(100% + 38px)" ml="-22px" mr="-24px">
+      {/* <Box width="calc(100% + 38px)" ml="-22px" mr="-24px">
         <Separator
           borderColor="black"
           opacity={0.05}
           width="100%"
           mt={[4, 0]}
         />
-      </Box>
+      </Box> */}
 
       {addonsLoading ? (
         <Text>Loading addons...</Text>
@@ -241,7 +239,7 @@ export const Cart: React.FC = () => {
         </Box>
       )}
 
-      <SelectLocation cityName={city} isVisible={showLocationDropdown} />
+      {/*<SelectLocation cityName={city} isVisible={showLocationDropdown} />*/}
 
       <Button
         onClick={handleCheckout}
