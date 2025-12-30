@@ -40,7 +40,7 @@ interface productForm {
   productImage: FileList;
   price: number;
   discount: number;
-  categoryId: string;
+  categoryId: string[];
   addonItemIds: string[];
   availability: boolean;
   tax: number;
@@ -55,6 +55,7 @@ export const NewItemContent: React.FC = () => {
   const [selectedCategoryText, setSelectedCategoryText] = useState(
     "Seleccionar Categoría"
   );
+
   const [statusKey, setStatusKey] = useState("true");
 
   const options = [
@@ -73,6 +74,7 @@ export const NewItemContent: React.FC = () => {
     useForm<productForm>({
       defaultValues: {
         variants: [{ name: "", price: 0 }],
+        categoryId: [],
       },
     });
 
@@ -89,9 +91,8 @@ export const NewItemContent: React.FC = () => {
   useEffect(() => {
     if (categoryData) {
       const opts = categoryData.map((cat: any) => ({
-        key: cat.id,
-        textValue: cat.name,
-        children: cat.name,
+        label: cat.name,
+        value: cat.id,
       }));
       setCategoryOptions(opts);
     }
@@ -100,6 +101,8 @@ export const NewItemContent: React.FC = () => {
   const categoryCollection = createListCollection({
     items: categoryOptions,
   });
+
+  const selectedCategories = watch("categoryId") || [];
 
   const handleAddonSelectionChange = (selectedIds: string[]) => {
     setValue("addonItemIds", selectedIds, { shouldValidate: true });
@@ -119,7 +122,10 @@ export const NewItemContent: React.FC = () => {
   }, [priceValue, discountValue]);
 
   const handleClearForm = () => {
-    reset();
+    reset({
+      variants: [{ name: "", price: 0 }],
+      categoryId: [],
+    });
     setStatusKey("true");
     setImagePreview(null);
     setSelectedCategoryText("Seleccionar Categoría");
@@ -132,7 +138,14 @@ export const NewItemContent: React.FC = () => {
     formData.append("description", values.description);
     formData.append("price", String(values.price));
     formData.append("discount", String(values.discount));
-    formData.append("categoryId", values.categoryId);
+
+    if (values.categoryId && values.categoryId.length > 0) {
+      values.categoryId.forEach((id) => {
+        formData.append("categoryId", id);
+      });
+    }
+
+    // formData.append("categoryId", values.categoryId);
     // formData.append("tax", String(values.tax));
 
     if (values.availability !== undefined) {
@@ -170,8 +183,6 @@ export const NewItemContent: React.FC = () => {
   return (
     <>
       <form onSubmit={handleSubmit(onSubmit)}>
-        {" "}
-        {/* It's better practice to wrap everything in a form tag */}
         <Box bg={"#fff"}>
           <Box p={6} bg="white">
             <Center
@@ -285,18 +296,27 @@ export const NewItemContent: React.FC = () => {
                 <Flex flexDirection={["column", "row"]}>
                   <Text minW={"150px"}>Categoría de Comida</Text>
                   <Select.Root
+                    multiple
                     collection={categoryCollection}
+                    value={selectedCategories}
                     onValueChange={(details) => {
-                      if (details) {
-                        const selectedItem = categoryCollection.items.find(
-                          (item) => item.key === details.value[0]
+                      if (!details) return;
+
+                      const next = details.value; // string[]
+
+                      setValue("categoryId", next, { shouldValidate: true });
+
+                      if (next.length === 0) {
+                        setSelectedCategoryText("Seleccionar Categoría");
+                      } else if (next.length === 1) {
+                        const item = categoryCollection.items.find(
+                          (i) => i.value === next[0]
                         );
-                        if (selectedItem) {
-                          setValue("categoryId", selectedItem.key, {
-                            shouldValidate: true,
-                          });
-                          setSelectedCategoryText(selectedItem.textValue);
-                        }
+                        setSelectedCategoryText(item?.label ?? "1 categoría");
+                      } else {
+                        setSelectedCategoryText(
+                          `${next.length} categorías seleccionadas`
+                        );
                       }
                     }}
                   >
@@ -307,7 +327,7 @@ export const NewItemContent: React.FC = () => {
                       cursor="pointer"
                     >
                       <Select.Trigger cursor="pointer" border="none">
-                        <Select.ValueText color={"#000"}>
+                        <Select.ValueText color="#000">
                           {selectedCategoryText}
                         </Select.ValueText>
                       </Select.Trigger>
@@ -324,11 +344,12 @@ export const NewItemContent: React.FC = () => {
                         >
                           {categoryCollection.items.map((item) => (
                             <Select.Item
-                              key={item.key}
-                              item={item.key}
+                              key={item.value}
+                              item={item.value}
                               cursor="pointer"
                             >
-                              {item.textValue}
+                              {item.label}
+                              <Select.ItemIndicator />
                             </Select.Item>
                           ))}
                         </Select.Content>
@@ -421,7 +442,6 @@ export const NewItemContent: React.FC = () => {
             </Box>
           </HStack>
 
-          {/* ... Your unchanged POS Code / Final Price JSX ... */}
           <HeaderSection title="Código POS General del Artículo" />
 
           <Box bgColor={"#fff"} color={"#000"} p={6}>

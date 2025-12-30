@@ -36,7 +36,7 @@ interface ProductDataForModal {
   price: string;
   photo: string;
   discount: string;
-  categoryId: string | null;
+  categoryId: string[] | null;
   variants: ProductVariant[];
 }
 
@@ -57,6 +57,7 @@ export const FoodItemHeader = () => {
 
   // 1. SIMPLIFY TABLE DATA
   // Only return raw data here. Do not return JSX.
+
   const tableData = useMemo(() => {
     return products?.slice(0, visibleCount) || [];
   }, [products, visibleCount]);
@@ -187,8 +188,20 @@ export const FoodItemHeader = () => {
     {
       accessorKey: "category",
       header: "Categorías",
-      cell: ({ row }: { row: any }) =>
-        row.original.category?.name ?? "Sin Categoría",
+      cell: ({ row }: { row: any }) => {
+        const rels = row.original.category as
+          | { category?: { name: string } }[]
+          | undefined;
+
+        if (!rels || rels.length === 0) return "Sin Categoría";
+
+        const names = rels
+          .map((pc) => pc.category?.name)
+          .filter(Boolean)
+          .join(", ");
+
+        return names || "Sin Categoría";
+      },
     },
     {
       accessorKey: "price",

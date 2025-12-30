@@ -73,7 +73,6 @@ export const EditBranchModal = ({
   const [inputValue, setInputValue] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [cityInputValue, setCityInputValue] = useState("");
-  // const [deliveryRate, setDeliveryRate] = useState("");
   const [orderType, setOrderType] = useState("");
 
   const [deliveryRates, setDeliveryRates] = useState([
@@ -82,18 +81,24 @@ export const EditBranchModal = ({
 
   const [isMapOpen, setIsMapOpen] = useState(false);
 
+  // Collections
   const cityCollection = createListCollection<SelectItem>({
     items:
-      cities?.map((city: any) => ({ label: city.name, value: city.id })) || [],
+      cities?.map((city: any) => ({
+        label: city.name,
+        value: city.id,
+      })) || [],
   });
 
-  const orderTypeOptions = [
+  const orderTypeOptions: SelectItem[] = [
     { label: "Both", value: "both" },
     { label: "Pickup", value: "pickup" },
     { label: "Delivery", value: "delivery" },
   ];
 
-  const orderTypeCollection = createListCollection({ items: orderTypeOptions });
+  const orderTypeCollection = createListCollection<SelectItem>({
+    items: orderTypeOptions,
+  });
 
   const managerOptions = useMemo(() => {
     if (!allUsers) return [];
@@ -105,35 +110,44 @@ export const EditBranchModal = ({
       }));
   }, [allUsers]);
 
-  const managerCollection = createListCollection({ items: managerOptions });
-  console.log(branch?.deliveryRates);
+  const managerCollection = createListCollection<SelectItem>({
+    items: managerOptions,
+  });
+
   useEffect(() => {
-    if (branch) {
-      setName(branch.name || "");
-      setAddress(branch.address || "");
-      setPhoneNumber(branch.phoneNumber || "");
-      setStatus(branch.status);
-      setCityId(branch.cityId || "");
-      setManagerId(branch.managerId || "");
-      setLocation(branch.location || null);
+    if (!branch) return;
 
-      setTags(branch.areas || []);
-      setDeliveryRates(branch.deliveryRates || []);
-      setOrderType(branch.orderType || "");
+    setName(branch.name || "");
+    setAddress(branch.address || "");
+    setPhoneNumber(branch.phoneNumber || "");
+    setStatus(branch.status);
+    setCityId(branch.cityId || "");
+    setManagerId(branch.managerId || "");
+    setLocation(branch.location || null);
 
-      // Set city input text for Combobox
-      const cityName = cities?.find((c: any) => c.id === branch.cityId)?.name;
-      if (cityName) setCityInputValue(cityName);
+    setTags(branch.areas || []);
+    setDeliveryRates(branch.deliveryRates || []);
 
-      if (branch.operatingHours) {
-        const parsedShifts = branch.operatingHours.split(",").map((part) => {
-          const times = part.trim().split(" - ");
-          return { openTime: times[0] || "", closeTime: times[1] || "" };
-        });
-        setShifts(
-          parsedShifts.length ? parsedShifts : [{ openTime: "", closeTime: "" }]
-        );
-      } else setShifts([{ openTime: "", closeTime: "" }]);
+    const ot = branch.orderType?.toLowerCase() as
+      | "both"
+      | "pickup"
+      | "delivery"
+      | undefined;
+    setOrderType(ot ?? "");
+
+    const cityName = cities?.find((c: any) => c.id === branch.cityId)?.name;
+    if (cityName) setCityInputValue(cityName);
+
+    if (branch.operatingHours) {
+      const parsedShifts = branch.operatingHours.split(",").map((part) => {
+        const times = part.trim().split(" - ");
+        return { openTime: times[0] || "", closeTime: times[1] || "" };
+      });
+      setShifts(
+        parsedShifts.length ? parsedShifts : [{ openTime: "", closeTime: "" }]
+      );
+    } else {
+      setShifts([{ openTime: "", closeTime: "" }]);
     }
   }, [branch, cities]);
 
@@ -169,7 +183,7 @@ export const EditBranchModal = ({
     setDeliveryRates(updated);
   };
 
-  const handleDeleteRate = (index: any) => {
+  const handleDeleteRate = (index: number) => {
     setDeliveryRates(deliveryRates.filter((_, i) => i !== index));
   };
 
@@ -195,7 +209,7 @@ export const EditBranchModal = ({
         location: location ?? undefined,
         status,
         cityId,
-        deliveryRates: deliveryRates,
+        deliveryRates,
         manager: managerId,
         areas: tags,
         orderType,
@@ -247,13 +261,13 @@ export const EditBranchModal = ({
                     allowCustomValue
                     collection={cityCollection}
                     onValueChange={(details) => {
-                      const selectedCity = details.value?.[0];
-                      if (selectedCity) {
-                        setCityInputValue(selectedCity);
+                      const selectedId = details.value?.[0];
+                      if (selectedId) {
+                        setCityId(selectedId);
                         const cityObj = cities?.find(
-                          (c: any) => c.name === selectedCity
+                          (c: any) => c.id === selectedId
                         );
-                        if (cityObj) setCityId(cityObj.id);
+                        if (cityObj) setCityInputValue(cityObj.name);
                       }
                     }}
                     width="100%"
@@ -403,10 +417,11 @@ export const EditBranchModal = ({
                   </Text>
                   <Select.Root
                     collection={managerCollection}
-                    value={[managerId]}
+                    value={managerId ? [managerId] : []}
                     onValueChange={(details) => {
                       if (details.value.length > 0)
                         setManagerId(details.value[0]);
+                      else setManagerId("");
                     }}
                     disabled={isLoadingUsers}
                   >
@@ -542,28 +557,24 @@ export const EditBranchModal = ({
                 </GridItem>
 
                 {/* Order Type */}
-
                 <GridItem colSpan={1}>
                   <Text mb={2} fontSize={"md"}>
                     Tipo de orden
                   </Text>
                   <Box w={"full"}>
-                    {/* 3. Implement the Select component using the collection */}
                     <Select.Root
                       collection={orderTypeCollection}
                       value={orderType ? [orderType] : []}
                       onValueChange={(details) => {
-                        // Ensure a value exists before setting state
                         if (details.value.length > 0) {
                           setOrderType(details.value[0]);
                         } else {
-                          setOrderType(""); // Handle clearing the selection
+                          setOrderType("");
                         }
                       }}
                     >
                       <Select.Control>
                         <Select.Trigger
-                          // Using your established styling for consistency
                           css={{
                             width: "100%",
                             height: "40px",
@@ -585,7 +596,6 @@ export const EditBranchModal = ({
                       <Portal>
                         <Select.Positioner>
                           <Select.Content>
-                            {/* 4. Map over the collection's items */}
                             {orderTypeCollection.items.map((item) => (
                               <Select.Item item={item} key={item.value}>
                                 {item.label}

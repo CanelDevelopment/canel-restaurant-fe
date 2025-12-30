@@ -16,7 +16,7 @@ import {
   InputGroup,
   Select,
 } from "@chakra-ui/react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useUpdateProduct } from "@/hooks/product/useupdateproduct";
 import { useFetchCategories } from "@/hooks/category/usefetchcategory";
 import type { ProductVariant } from "./newitemcontent";
@@ -28,7 +28,7 @@ interface ProductData {
   price: string;
   photo: string;
   discount: string;
-  categoryId: string | null;
+  categoryId: string[] | null;
   variants: ProductVariant[];
 }
 
@@ -45,14 +45,13 @@ export const EditProductModal = ({
 }: EditProductModalProps) => {
   const { mutate: updateProduct, isPending } = useUpdateProduct();
   const { data: categories } = useFetchCategories();
-  console.log(product);
+
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [newImageFile, setNewImageFile] = useState<File | null>(null);
-  const [categoryId, setCategoryId] = useState<string[]>([]);
-  const [categoryOptions, setCategoryOptions] = useState<any[]>([]);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [selectedCategoryText, setSelectedCategoryText] = useState(
     "Seleccionar categoría"
   );
@@ -61,43 +60,45 @@ export const EditProductModal = ({
     []
   );
 
-  const categoryCollection = createListCollection({ items: categoryOptions });
+  // Memoize collection so items reference is stable while dialog is open
+  const categoryCollection = useMemo(
+    () =>
+      createListCollection({
+        items:
+          categories?.map((cat: any) => ({
+            label: cat.name,
+            value: cat.id,
+          })) ?? [],
+      }),
+    [categories]
+  );
 
   useEffect(() => {
-    if (categories) {
-      setCategoryOptions(
-        categories.map((cat: any) => ({
-          value: cat.id,
-          label: cat.name,
-        }))
-      );
+    if (!product) return;
+
+    setName(product.name);
+    setDescription(product.description);
+    setPrice(product.price.replace("Ref ", ""));
+    setImagePreview(product.photo);
+    setNewImageFile(null);
+    setDiscount(product.discount);
+
+    setSelectedCategoryIds(product.categoryId ?? []);
+
+    if (product.variants && product.variants.length > 0) {
+      setVariants(product.variants);
+    } else {
+      setVariants([{ name: "", price: 0 }]);
     }
 
-    if (product) {
-      setName(product.name);
-      setDescription(product.description);
-      setPrice(product.price.replace("Ref ", ""));
-      setImagePreview(product.photo);
-      setCategoryId(product.categoryId ? [product.categoryId] : []);
-      setNewImageFile(null);
-      setDiscount(product.discount);
-
-      if (product?.variants) {
-        setVariants(product.variants);
-      } else {
-        setVariants([{ name: "", price: 0 }]);
-      }
-
-      if (categories && product.categoryId) {
-        const currentCategory = categories.find(
-          (cat) => cat.id === product.categoryId
-        );
-        setSelectedCategoryText(
-          currentCategory ? currentCategory.name : "Seleccionar categoría"
-        );
-      } else {
-        setSelectedCategoryText("Seleccionar categoría");
-      }
+    if (categories && product.categoryId && product.categoryId.length > 0) {
+      const firstId = product.categoryId[0];
+      const currentCategory = categories.find((cat) => cat.id === firstId);
+      setSelectedCategoryText(
+        currentCategory ? currentCategory.name : "Seleccionar categoría"
+      );
+    } else {
+      setSelectedCategoryText("Seleccionar categoría");
     }
   }, [product, categories]);
 
@@ -113,8 +114,6 @@ export const EditProductModal = ({
   const handleSaveChanges = () => {
     if (!product) return;
 
-    const finalCategoryId = categoryId[0] || null;
-
     updateProduct(
       {
         id: product.id,
@@ -122,7 +121,8 @@ export const EditProductModal = ({
         description,
         price,
         discount: Number(discount),
-        categoryId: finalCategoryId,
+        // send array of category ids to backend
+        categoryId: selectedCategoryIds,
         image: newImageFile,
         variants,
       },
@@ -193,16 +193,27 @@ export const EditProductModal = ({
                 <Box>
                   <Text mb={2}>Categoría</Text>
                   <Select.Root
+                    // single select here; for multi in edit modal, add `multiple`
                     collection={categoryCollection}
-                    value={categoryId}
+                    value={selectedCategoryIds}
                     onValueChange={(details) => {
-                      setCategoryId(details.value);
+                      const next = details.value; // string[]
+                      setSelectedCategoryIds(next);
 
-                      const selectedItem = categoryOptions.find(
-                        (opt) => opt.value === details.value[0]
-                      );
-                      if (selectedItem)
-                        setSelectedCategoryText(selectedItem.label);
+                      if (next.length === 0) {
+                        setSelectedCategoryText("Seleccionar categoría");
+                      } else if (next.length === 1) {
+                        const item = categoryCollection.items.find(
+                          (opt) => opt.value === next[0]
+                        );
+                        setSelectedCategoryText(
+                          item?.label ?? "Seleccionar categoría"
+                        );
+                      } else {
+                        setSelectedCategoryText(
+                          `${next.length} categorías seleccionadas`
+                        );
+                      }
                     }}
                   >
                     <Select.Control>
@@ -218,11 +229,12 @@ export const EditProductModal = ({
                         <Select.Content zIndex={1400} bg="white">
                           {categoryCollection.items.map((item) => (
                             <Select.Item
-                              key={item.key}
-                              item={item.value}
+                              key={item.value}
+                              item={item} // pass the collection item
                               cursor="pointer"
                             >
                               {item.label}
+                              <Select.ItemIndicator />
                             </Select.Item>
                           ))}
                         </Select.Content>
@@ -267,7 +279,6 @@ export const EditProductModal = ({
 
                 <Box>
                   <Text mb={2}>Variantes</Text>
-
                   {variants.map((variant, index) => (
                     <HStack key={index} mb={2}>
                       <Input

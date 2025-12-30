@@ -13,7 +13,7 @@ interface UpdateProductPayload {
   description?: string;
   price?: string;
   availability?: boolean;
-  categoryId?: string | null;
+  categoryId?: string[] | null;
   status?: string;
   branches?: string[];
   discount?: number;
@@ -37,8 +37,10 @@ export const useUpdateProduct = () => {
         if (payload.price !== undefined)
           formData.append("price", payload.price);
 
-        if (payload.categoryId) {
-          formData.append("categoryId", payload.categoryId);
+        if (payload.categoryId && payload.categoryId.length > 0) {
+          payload.categoryId.forEach((id) => {
+            formData.append("categoryId", id);
+          });
         }
 
         formData.append("productImage", payload.image);

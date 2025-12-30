@@ -22,7 +22,9 @@ export const useAddProduct = () => {
       console.log("Product added successfully:", data.message);
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || "Error al agregar el producto");
+      toast.error(
+        error.response?.data?.message || "Error al agregar el producto"
+      );
       console.error("Failed to add product:", error.message);
     },
   });

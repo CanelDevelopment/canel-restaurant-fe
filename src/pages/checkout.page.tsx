@@ -145,8 +145,9 @@ const Checkout: React.FC = () => {
       }
     });
 
-    if (formValues.paymentSS) {
-      formData.append("paymentSS", formValues.paymentSS);
+    if (formValues.paymentSS && formValues.paymentSS.length > 0) {
+      const file = formValues.paymentSS[0];
+      formData.append("paymentSS", file);
     }
 
     createOrder(formData);
