@@ -232,7 +232,7 @@ const Signin = () => {
                 country={"us"}
                 value={phoneNumber}
                 onChange={(phone) => setPhoneNumber(phone)}
-                onlyCountries={["us", "ve"]}
+                onlyCountries={["us", "ve", "pk"]}
                 countryCodeEditable={false}
                 inputStyle={{
                   width: "100%",

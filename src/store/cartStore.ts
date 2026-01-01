@@ -156,6 +156,7 @@ export const useCartStore = create(
               variantName: item.variantName,
               variantPrice: item.variantPrice,
 
+              instructions: item.instructions,
               isVariant: !!item.variantName,
               categoryId,
               volumeDiscountRules,

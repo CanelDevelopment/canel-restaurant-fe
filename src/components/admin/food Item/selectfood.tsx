@@ -17,14 +17,28 @@ import { useEffect } from "react";
 // The component expects a callback function to notify the parent of changes.
 interface SelectFoodProps {
   onSelectionChange: (selectedIds: string[]) => void;
+  hidePortal?: boolean;
+  selectedIds?: string[];
 }
 
 export const SelectFood: React.FC<SelectFoodProps> = ({
   onSelectionChange,
+  selectedIds,
+  hidePortal = false,
 }) => {
   const { data: groupedAddons, isLoading, isError } = useFetchGroupedAddons();
 
-  const checkboxGroup = useCheckboxGroup();
+  // const checkboxGroup = useCheckboxGroup();
+
+  const checkboxGroup = useCheckboxGroup({
+    value: selectedIds ?? [],
+  });
+
+  useEffect(() => {
+    if (selectedIds) {
+      checkboxGroup.setValue(selectedIds);
+    }
+  }, [selectedIds]);
 
   useEffect(() => {
     onSelectionChange(checkboxGroup.value);
@@ -62,7 +76,7 @@ export const SelectFood: React.FC<SelectFoodProps> = ({
           <Icon as={FaChevronDown} boxSize={3} />
         </Button>
       </Menu.Trigger>
-      <Portal>
+      <Portal disabled={hidePortal}>
         <Menu.Positioner>
           <Menu.Content
             bgColor={"#fff"}
@@ -72,7 +86,7 @@ export const SelectFood: React.FC<SelectFoodProps> = ({
             border={"1px solid #DEDEDE"}
             maxH="300px"
             overflowY="auto"
-            width="var(--reference-width)" // Ensures menu width matches the button
+            width="var(--reference-width)"
           >
             {isLoading && (
               <Center p={4}>

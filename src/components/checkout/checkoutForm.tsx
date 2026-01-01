@@ -34,7 +34,7 @@ import { useFetchConversion } from "@/hooks/payment/usefetchconversion";
 export interface OrderForm {
   name: string;
   location: string;
-  phoneNumber: number;
+  phoneNumber: string;
   rif: string;
   nearestLandmark: string;
   email: string;
@@ -238,7 +238,10 @@ export const CheckoutForm: React.FC = () => {
               {...register("phoneNumber", {
                 maxLength: 11,
                 minLength: 11,
-                pattern: /^[0-9]+$/,
+                pattern: {
+                  value: /^\+?[0-9]{10,15}$/,
+                  message: "Ingrese un número de teléfono válido",
+                },
               })}
             />
           </Box>

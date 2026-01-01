@@ -25,7 +25,6 @@ import { useFetchCities } from "@/hooks/branch/usefetchcities";
 import { useFetchAllUsers } from "@/hooks/user/usefetchalluser";
 import { FiMapPin, FiPlus } from "react-icons/fi";
 import { BiSolidTrash } from "react-icons/bi";
-import { FaChevronDown } from "react-icons/fa6";
 import MapPicker from "@/components/checkout/mappicker";
 
 interface BranchData {
@@ -227,7 +226,7 @@ export const EditBranchModal = ({
       >
         <Dialog.Backdrop />
         <Dialog.Positioner>
-          <Dialog.Content rounded={"2xl"}>
+          <Dialog.Content rounded={"2xl"} overflow="visible">
             <Dialog.Header
               fontSize="2xl"
               fontWeight="bold"
@@ -303,7 +302,7 @@ export const EditBranchModal = ({
                         <Combobox.Trigger />
                       </Combobox.IndicatorGroup>
                     </Combobox.Control>
-                    <Portal>
+                    <Portal disabled>
                       <Combobox.Positioner>
                         <Combobox.Content>
                           <Combobox.Empty>No se encontró ciudad</Combobox.Empty>
@@ -426,11 +425,24 @@ export const EditBranchModal = ({
                     disabled={isLoadingUsers}
                   >
                     <Select.Control>
-                      <Select.Trigger>
+                      <Select.Trigger
+                        css={{
+                          width: "100%",
+                          height: "40px",
+                          paddingInline: "1rem",
+                          backgroundColor: "#EBEBEB",
+                          borderRadius: "lg",
+                          border: "none",
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                        }}
+                      >
                         <Select.ValueText placeholder="Asignar un gerente" />
+                        <Select.Indicator />
                       </Select.Trigger>
                     </Select.Control>
-                    <Portal>
+                    <Portal disabled>
                       <Select.Positioner>
                         <Select.Content>
                           {isLoadingUsers ? (
@@ -439,6 +451,8 @@ export const EditBranchModal = ({
                             managerCollection.items.map((item) => (
                               <Select.Item item={item} key={item.value}>
                                 {item.label}
+
+                                <Select.ItemIndicator />
                               </Select.Item>
                             ))
                           )}
@@ -566,6 +580,7 @@ export const EditBranchModal = ({
                       collection={orderTypeCollection}
                       value={orderType ? [orderType] : []}
                       onValueChange={(details) => {
+                        console.log(details);
                         if (details.value.length > 0) {
                           setOrderType(details.value[0]);
                         } else {
@@ -588,19 +603,24 @@ export const EditBranchModal = ({
                           }}
                         >
                           <Select.ValueText placeholder="Seleccione un tipo" />
-                          <Select.Indicator>
-                            <FaChevronDown />
-                          </Select.Indicator>
+                          <Select.Indicator />
                         </Select.Trigger>
                       </Select.Control>
-                      <Portal>
+                      <Portal disabled>
                         <Select.Positioner>
                           <Select.Content>
-                            {orderTypeCollection.items.map((item) => (
-                              <Select.Item item={item} key={item.value}>
-                                {item.label}
-                              </Select.Item>
-                            ))}
+                            {orderTypeCollection.items.map(
+                              (item) => (
+                                console.log(item),
+                                (
+                                  <Select.Item item={item} key={item.value}>
+                                    {item.label}
+
+                                    <Select.ItemIndicator />
+                                  </Select.Item>
+                                )
+                              )
+                            )}
                           </Select.Content>
                         </Select.Positioner>
                       </Portal>

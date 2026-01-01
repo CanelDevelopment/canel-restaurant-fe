@@ -6,6 +6,7 @@ import { FaRegTrashCan } from "react-icons/fa6";
 import { useRemoveCartItem } from "@/hooks/cart/usedeletecart";
 import { useUpdateCartItem } from "@/hooks/cart/useupdatecart";
 import { useRemoveAddonCartItem } from "@/hooks/cart/usedeleteaddoncart";
+import { Tooltip } from "@/components/ui/tooltip";
 
 interface AddonItem {
   quantity: number;
@@ -24,6 +25,7 @@ interface CartItemProps {
   imageUrl: string;
   quantity: number;
   addons?: AddonItem[];
+  instructions?: string;
 }
 
 export const CartItem: React.FC<CartItemProps> = ({
@@ -32,6 +34,7 @@ export const CartItem: React.FC<CartItemProps> = ({
   price,
   imageUrl,
   quantity,
+  instructions,
   addons = [],
 }) => {
   const { mutate: removeFromCartMutation } = useRemoveCartItem();
@@ -67,56 +70,72 @@ export const CartItem: React.FC<CartItemProps> = ({
       price: number;
       imageUrl: string;
       quantity: number;
+      instructions?: string;
     },
     onRemove: () => void
   ) => (
-    <HStack
-      key={item.id}
-      justify="space-between"
-      align="center"
-      width="full"
-      py={2}
-    >
-      <HStack align="center">
-        <Image
-          loading="lazy"
-          src={item.imageUrl}
-          alt={item.name}
-          boxSize="50px"
-          objectFit="cover"
-          borderRadius="md"
-        />
-        <Flex direction="column" justify="center">
-          <Text fontSize="md" fontWeight="bold">
-            {item.name}
-          </Text>
-          <Text fontSize="dm" color="gray.500">
-            REF {item.price}
-          </Text>
-        </Flex>
-      </HStack>
+    console.log(item),
+    (
+      <>
+        <HStack
+          key={item.id}
+          justify="space-between"
+          align="center"
+          width="full"
+          py={2}
+        >
+          <HStack align="center">
+            <Image
+              loading="lazy"
+              src={item.imageUrl}
+              alt={item.name}
+              boxSize="50px"
+              objectFit="cover"
+              borderRadius="md"
+            />
+            <Flex direction="column" justify="center">
+              <Text fontSize="md" fontWeight="bold">
+                {item.name}
+              </Text>
+              <Text fontSize="dm" color="gray.500">
+                REF {item.price}
+              </Text>
+            </Flex>
+          </HStack>
 
-      <HStack>
-        <Counter
-          value={item.quantity}
-          onChange={(val) => handleQuantityChange(item.id, val)}
-          modalBorderColor="#E2E8F0"
-        />
-        <Icon
-          as={FaRegTrashCan}
-          cursor="pointer"
-          color="gray.400"
-          _hover={{ color: "red.500" }}
-          onClick={onRemove}
-        />
-      </HStack>
-    </HStack>
+          <HStack>
+            <Counter
+              value={item.quantity}
+              onChange={(val) => handleQuantityChange(item.id, val)}
+              modalBorderColor="#E2E8F0"
+            />
+            <Icon
+              as={FaRegTrashCan}
+              cursor="pointer"
+              color="gray.400"
+              _hover={{ color: "red.500" }}
+              onClick={onRemove}
+            />
+          </HStack>
+        </HStack>
+        {item.instructions && (
+          <Tooltip content={item.instructions}>
+            <Text pl={4} truncate>
+              {item.instructions}
+            </Text>
+          </Tooltip>
+        )}
+      </>
+    )
   );
 
   return (
     <Box>
       {/* main product */}
-      {renderCartRow({ id, name, price, imageUrl, quantity }, handleRemoveItem)}
+      {renderCartRow(
+        { id, name, price, imageUrl, quantity, instructions },
+        handleRemoveItem
+      )}
 
       {/* addons as products */}
       {addons.map((addon) =>

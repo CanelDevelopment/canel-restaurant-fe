@@ -88,6 +88,7 @@ export const Elevatedcard: React.FC<ElevatedCardProps> = ({
       image: imageSource,
       discount,
       quantity: Number(quantity),
+      instructions: notes || "",
       addonItemIds,
       isVariant, // Variable exists now
       volumeDiscountRules, // Variable exists now
@@ -97,7 +98,7 @@ export const Elevatedcard: React.FC<ElevatedCardProps> = ({
     const payload = {
       productId: id,
       quantity: quantity,
-      notes: notes,
+      notes,
       variantName: selectedVariant?.name ?? undefined,
       variantPrice: Number(selectedVariant?.price ?? null),
     };

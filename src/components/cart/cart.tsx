@@ -21,16 +21,6 @@ import OrderDeliveryInfo from "./orderdeliverytime";
 import { useCalculationStore } from "@/store/calculationStore";
 import { useFetchCurrentUser } from "@/hooks/user/usefetchuser";
 import { LoginPromptModal } from "./logininvitationmodal";
-// import { SelectLocation } from "./SelectLocation";
-// import type { Branch } from "@/pages/locationform.page";
-
-// Define the Branch interface to ensure type safety
-// interface Branch {
-//   id: string;
-//   name: string;
-//   orderType: "pickup" | "delivery" | "both";
-//   // Add other properties if they exist
-// }
 
 interface Addon {
   addonId: string;
@@ -77,9 +67,6 @@ export const Cart: React.FC = () => {
   }, [allBranches]);
 
   const isOrderTypeSelectable = liveBranch?.orderType === "both";
-
-  // const selectedArea = localStorage.getItem("selectedArea");
-  // const city = localStorage.getItem("selectedCity") || "";
 
   useEffect(() => {
     if (liveBranch) {
@@ -166,21 +153,25 @@ export const Cart: React.FC = () => {
     navigate("/signin?redirect=/checkout");
   };
 
-  console.log("cartStore", cartStore);
-
   return (
     <>
-      {cartStore.map((item) => (
-        <CartItem
-          key={item.id}
-          id={item.id}
-          imageUrl={item.image}
-          name={item.name}
-          price={item.price}
-          quantity={item.quantity}
-          addons={item.selectedAddons}
-        />
-      ))}
+      {cartStore.map(
+        (item) => (
+          console.log("Rendering Cart with cartStore:", item),
+          (
+            <CartItem
+              key={item.id}
+              id={item.id}
+              imageUrl={item.image}
+              name={item.name}
+              price={item.price}
+              quantity={item.quantity}
+              addons={item.selectedAddons}
+              instructions={item.instructions}
+            />
+          )
+        )
+      )}
 
       {/* <Box width="calc(100% + 38px)" ml="-22px" mr="-24px">
         <Separator

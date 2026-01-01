@@ -38,12 +38,13 @@ interface ProductDataForModal {
   discount: string;
   categoryId: string[] | null;
   variants: ProductVariant[];
+  addonItemIds?: string[];
 }
 
 export const FoodItemHeader = () => {
   const { data: products, isLoading, isError } = useFetchProducts();
   const { mutate: updateProduct } = useUpdateProduct();
-  const { mutate: deleteProduct } = useDeleteProduct(); // Moved up for cleaner access
+  const { mutate: deleteProduct } = useDeleteProduct();
 
   const [updatingProductId, setUpdatingProductId] = useState<string | null>(
     null
@@ -54,9 +55,6 @@ export const FoodItemHeader = () => {
 
   const [visibleCount, setVisibleCount] = useState(5);
   const [_displayedData, setDisplayedData] = useState<Products[]>([]);
-
-  // 1. SIMPLIFY TABLE DATA
-  // Only return raw data here. Do not return JSX.
 
   const tableData = useMemo(() => {
     return products?.slice(0, visibleCount) || [];
@@ -134,6 +132,8 @@ export const FoodItemHeader = () => {
       // MOVED JSX HERE
       cell: ({ row }: { row: any }) => {
         const product = row.original;
+        // console.log("row", row);
+        // console.log("row.original", row.original);
         return (
           <Box className="flex flex-col gap-1 group">
             {product.name}
@@ -149,9 +149,14 @@ export const FoodItemHeader = () => {
                     description: product.description,
                     price: `Ref ${product.price}`,
                     photo: product.image,
-                    categoryId: product.category?.id || null,
+                    categoryId: Array.isArray(product.category)
+                      ? product.category
+                          .map((pc: any) => pc.categoryId)
+                          .filter(Boolean)
+                      : [],
                     variants: product.variants,
                     discount: product.discount,
+                    addonItemIds: product.addonItemIds,
                   })
                 }
               >

@@ -334,7 +334,9 @@ export const IncomingOrdersHeader = () => {
         accessorKey: "item",
         header: () => <Box fontWeight={"Black"}>Artículos</Box>,
         cell: ({ row }: { row: Row<TableData> }) => (
-          <Box className="truncate">{row.original.item}</Box>
+          <Box className="truncate" w={"220px"}>
+            {row.original.item}
+          </Box>
         ),
       },
       {

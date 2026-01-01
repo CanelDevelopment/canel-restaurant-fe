@@ -1,11 +1,4 @@
-import {
-  Image,
-  Grid,
-  GridItem,
-  createListCollection,
-  Portal,
-  HStack,
-} from "@chakra-ui/react";
+import { Image, Grid, createListCollection, HStack } from "@chakra-ui/react";
 import {
   Dialog,
   Button,
@@ -20,6 +13,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useUpdateProduct } from "@/hooks/product/useupdateproduct";
 import { useFetchCategories } from "@/hooks/category/usefetchcategory";
 import type { ProductVariant } from "./newitemcontent";
+import { SelectFood } from "./selectfood";
 
 interface ProductData {
   id: string;
@@ -30,6 +24,7 @@ interface ProductData {
   discount: string;
   categoryId: string[] | null;
   variants: ProductVariant[];
+  addonItemIds?: string[];
 }
 
 interface EditProductModalProps {
@@ -60,7 +55,8 @@ export const EditProductModal = ({
     []
   );
 
-  // Memoize collection so items reference is stable while dialog is open
+  const [addonItemIds, setAddonItemIds] = useState<string[]>([]);
+
   const categoryCollection = useMemo(
     () =>
       createListCollection({
@@ -84,6 +80,8 @@ export const EditProductModal = ({
     setDiscount(product.discount);
 
     setSelectedCategoryIds(product.categoryId ?? []);
+
+    setAddonItemIds(product.addonItemIds ?? []);
 
     if (product.variants && product.variants.length > 0) {
       setVariants(product.variants);
@@ -111,6 +109,10 @@ export const EditProductModal = ({
     }
   };
 
+  const handleAddonSelectionChange = (selectedIds: string[]) => {
+    setAddonItemIds(selectedIds);
+  };
+
   const handleSaveChanges = () => {
     if (!product) return;
 
@@ -121,10 +123,10 @@ export const EditProductModal = ({
         description,
         price,
         discount: Number(discount),
-        // send array of category ids to backend
         categoryId: selectedCategoryIds,
         image: newImageFile,
         variants,
+        addonItemIds,
       },
       { onSuccess: () => onClose() }
     );
@@ -134,70 +136,85 @@ export const EditProductModal = ({
     <Dialog.Root
       open={isOpen}
       onOpenChange={(details) => !details.open && onClose()}
-      size={"xl"}
+      size="cover"
     >
-      <Dialog.Backdrop />
+      <Dialog.Backdrop bg="blackAlpha.500" />
       <Dialog.Positioner>
-        <Dialog.Content rounded={"3xl"}>
+        <Dialog.Content
+          rounded="2xl"
+          maxW="4xl"
+          w="100%"
+          maxH="90vh"
+          overflow="hidden"
+          boxShadow="2xl"
+          bg="white"
+        >
           <Dialog.Header
-            fontSize="3xl"
-            fontWeight="bold"
-            bgColor={"Cgreen"}
-            py={7}
-            roundedTop={"3xl"}
+            bg="Cgreen"
+            color="Cbutton"
+            py={6}
+            px={6}
+            fontSize="2xl"
+            fontWeight="semibold"
           >
-            Editar Producto
+            Editar producto
           </Dialog.Header>
-          <Dialog.CloseTrigger />
-          <Dialog.Body>
-            <Grid templateColumns="repeat(5, 1fr)" gap={6}>
-              <GridItem colSpan={2}>
-                <Box>
-                  <Text mb={2}>Imagen del Producto</Text>
-                  <Image
-                    loading="lazy"
-                    src={imagePreview || "https://via.placeholder.com/150"}
-                    alt="Imagen del producto"
-                    borderRadius="md"
-                    boxSize="250px"
-                    objectFit="cover"
-                  />
-                  <Button as="label" mt={3} size="sm" width="100%">
-                    Cambiar Imagen
-                    <input
-                      id="file-upload"
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileChange}
-                      className="hidden"
-                    />
-                  </Button>
-                </Box>
-              </GridItem>
 
-              <GridItem
-                colSpan={3}
-                display="flex"
-                flexDirection="column"
-                gap={4}
-              >
+          <Dialog.CloseTrigger />
+
+          <Dialog.Body px={6} py={5} overflowY="auto">
+            <Grid
+              templateColumns={["1fr", null, "1.2fr 2fr"]}
+              gap={8}
+              alignItems="flex-start"
+            >
+              {/* Left: image card */}
+              <Box>
+                <Image
+                  src={imagePreview || "https://via.placeholder.com/400x300"}
+                  alt="Imagen del producto"
+                  objectFit="contain"
+                  w="100%"
+                  maxH="260px"
+                  mb={4}
+                />
+                <Button as="label" width="100%" colorScheme="teal" size="sm">
+                  Cambiar imagen
+                  <input
+                    id="file-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    style={{ display: "none" }}
+                  />
+                </Button>
+              </Box>
+
+              {/* Right: form */}
+              <Box display="flex" flexDirection="column" gap={4}>
+                {/* Nombre */}
                 <Box>
-                  <Text mb={2}>Nombre</Text>
+                  <Text mb={1} fontWeight="medium">
+                    Nombre
+                  </Text>
                   <Input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Nombre del Producto"
+                    placeholder="Nombre del producto"
                   />
                 </Box>
 
+                {/* Categoría */}
                 <Box>
-                  <Text mb={2}>Categoría</Text>
+                  <Text mb={1} fontWeight="medium">
+                    Categoría
+                  </Text>
                   <Select.Root
-                    // single select here; for multi in edit modal, add `multiple`
+                    multiple
                     collection={categoryCollection}
                     value={selectedCategoryIds}
                     onValueChange={(details) => {
-                      const next = details.value; // string[]
+                      const next = details.value;
                       setSelectedCategoryIds(next);
 
                       if (next.length === 0) {
@@ -217,70 +234,90 @@ export const EditProductModal = ({
                     }}
                   >
                     <Select.Control>
-                      <Select.Trigger>
+                      <Select.Trigger borderRadius="lg">
                         <Select.ValueText>
                           {selectedCategoryText}
                         </Select.ValueText>
                         <Select.Indicator />
                       </Select.Trigger>
                     </Select.Control>
-                    <Portal>
-                      <Select.Positioner zIndex={1400}>
-                        <Select.Content zIndex={1400} bg="white">
-                          {categoryCollection.items.map((item) => (
-                            <Select.Item
-                              key={item.value}
-                              item={item} // pass the collection item
-                              cursor="pointer"
-                            >
-                              {item.label}
-                              <Select.ItemIndicator />
-                            </Select.Item>
-                          ))}
-                        </Select.Content>
-                      </Select.Positioner>
-                    </Portal>
+
+                    {/* no extra Portal here to avoid removeChild issues */}
+                    <Select.Positioner zIndex={1400}>
+                      <Select.Content
+                        bg="white"
+                        borderRadius="md"
+                        boxShadow="lg"
+                      >
+                        {categoryCollection.items.map((item) => (
+                          <Select.Item
+                            key={item.value}
+                            item={item}
+                            cursor="pointer"
+                            px={3}
+                            py={2}
+                          >
+                            <Select.ItemText>{item.label}</Select.ItemText>
+                            <Select.ItemIndicator />
+                          </Select.Item>
+                        ))}
+                      </Select.Content>
+                    </Select.Positioner>
                   </Select.Root>
                 </Box>
 
-                <Box>
-                  <Text mb={2}>Precio</Text>
-                  <InputGroup left={"Ref"}>
-                    <Input
-                      type="number"
-                      value={price}
-                      onChange={(e) => setPrice(e.target.value)}
-                      placeholder="10.99"
-                    />
-                  </InputGroup>
-                </Box>
+                {/* Precio y Descuento side by side */}
+                <HStack>
+                  <Box flex="1">
+                    <Text mb={1} fontWeight="medium">
+                      Precio
+                    </Text>
+                    <InputGroup>
+                      <Input
+                        type="number"
+                        value={price}
+                        onChange={(e) => setPrice(e.target.value)}
+                        placeholder="23.00"
+                      />
+                    </InputGroup>
+                  </Box>
 
-                <Box>
-                  <Text mb={2}>descuento</Text>
-                  <InputGroup left={"Ref"}>
-                    <Input
-                      type="number"
-                      value={discount}
-                      onChange={(e) => setDiscount(e.target.value)}
-                      placeholder="10.99"
-                    />
-                  </InputGroup>
-                </Box>
+                  <Box flex="1">
+                    <Text mb={1} fontWeight="medium">
+                      Descuento
+                    </Text>
+                    <InputGroup>
+                      <Input
+                        type="number"
+                        value={discount}
+                        onChange={(e) => setDiscount(e.target.value)}
+                        placeholder="0"
+                      />
+                    </InputGroup>
+                  </Box>
+                </HStack>
 
+                {/* Descripción */}
                 <Box>
-                  <Text mb={2}>Descripción</Text>
+                  <Text mb={1} fontWeight="medium">
+                    Descripción
+                  </Text>
                   <Textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Descripción del Producto"
+                    placeholder="Descripción del producto"
                     rows={4}
+                    borderRadius="lg"
                   />
                 </Box>
 
+                {/* Variantes */}
                 <Box>
-                  <Text mb={2}>Variantes</Text>
+                  <Text mb={2} fontWeight="medium">
+                    Variantes
+                  </Text>
                   {variants.map((variant, index) => (
-                    <HStack key={index} mb={2}>
+                    <HStack key={index} mb={2} align="flex-start">
                       <Input
                         placeholder="Nombre variante"
                         value={variant.name}
@@ -290,7 +327,6 @@ export const EditProductModal = ({
                           setVariants(updated);
                         }}
                       />
-
                       <Input
                         type="number"
                         placeholder="Precio"
@@ -300,10 +336,12 @@ export const EditProductModal = ({
                           updated[index].price = Number(e.target.value);
                           setVariants(updated);
                         }}
+                        maxW="140px"
                       />
-
                       <Button
+                        size="sm"
                         colorScheme="red"
+                        variant="ghost"
                         onClick={() => {
                           const updated = variants.filter(
                             (_, i) => i !== index
@@ -311,26 +349,44 @@ export const EditProductModal = ({
                           setVariants(updated);
                         }}
                       >
-                        Delete
+                        Eliminar
                       </Button>
                     </HStack>
                   ))}
-
                   <Button
                     mt={2}
                     size="sm"
+                    variant="outline"
                     onClick={() =>
                       setVariants([...variants, { name: "", price: 0 }])
                     }
                   >
-                    + Add Variant
+                    + Añadir variante
                   </Button>
                 </Box>
-              </GridItem>
+
+                {/* Addon items */}
+                <Box>
+                  <Text mb={2} fontWeight="medium">
+                    Artículos de complemento
+                  </Text>
+                  <SelectFood
+                    hidePortal={true}
+                    selectedIds={addonItemIds}
+                    onSelectionChange={handleAddonSelectionChange}
+                  />
+                </Box>
+              </Box>
             </Grid>
           </Dialog.Body>
 
-          <Dialog.Footer>
+          <Dialog.Footer
+            px={6}
+            py={4}
+            borderTopWidth="1px"
+            bg="gray.50"
+            justifyContent="flex-end"
+          >
             <Button variant="ghost" mr={3} onClick={onClose}>
               Cancelar
             </Button>
@@ -340,7 +396,7 @@ export const EditProductModal = ({
               disabled={isPending}
               loadingText="Guardando..."
             >
-              Guardar Cambios
+              Guardar cambios
             </Button>
           </Dialog.Footer>
         </Dialog.Content>

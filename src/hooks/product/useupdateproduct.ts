@@ -19,6 +19,7 @@ interface UpdateProductPayload {
   discount?: number;
   image?: File | null;
   variants?: ProductVariant[];
+  addonItemIds?: string[];
 }
 
 export const useUpdateProduct = () => {
