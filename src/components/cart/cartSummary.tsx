@@ -51,7 +51,7 @@ export const CartSummary: React.FC<CartSummaryProps> = () => {
       ? "Ref"
       : selectedPayment === "online"
       ? "Bs"
-      : "Ref"; // Example for Bolivars / Zelle
+      : "Ref";
 
   // Convert all relevant values
   const convertedSubtotal =

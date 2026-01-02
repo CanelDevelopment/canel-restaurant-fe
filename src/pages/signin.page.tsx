@@ -18,6 +18,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Offline } from "@/provider/offline";
 import { authClient } from "@/provider/user.provider";
 import toast from "react-hot-toast";
+import { useSyncCart } from "@/hooks/cart/usesynccart";
 
 const Signin = () => {
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -43,6 +44,8 @@ const Signin = () => {
   const handleLoginSuccess = () => {
     const storedRedirect = localStorage.getItem("postLoginRedirect");
     const targetPath = storedRedirect || "/home";
+
+    useSyncCart();
 
     if (window.location.pathname === targetPath) {
       return;

@@ -131,12 +131,14 @@ export const useCartStore = create(
         set(() => {
           const transformedCart: CartItem[] = items.map((item) => {
             const product = item.product || item;
-
+            console.log("item", item);
             const numericPrice =
               item.variantPrice && item.variantPrice > 0
                 ? item.variantPrice
-                : parseFloat(
-                    String(item.product.price).replace(/[^0-9.]/g, "")
+                : Number(
+                    String(product.price ?? 0)
+                      .toString()
+                      .replace(/[^0-9.]/g, "")
                   ) || 0;
 
             const categoryId = product.categoryId || product.category?.id;

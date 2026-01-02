@@ -28,6 +28,7 @@ import {
 } from "@/store/cartStore";
 import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 
 const Checkout: React.FC = () => {
   const methods = useForm<OrderForm>();
@@ -46,6 +47,8 @@ const Checkout: React.FC = () => {
   const syncStarted = useRef(false);
 
   const [isPreparingCart, setIsPreparingCart] = useState(true);
+
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!currentUser?.id || localCart.length === 0 || syncStarted.current) {
@@ -89,6 +92,8 @@ const Checkout: React.FC = () => {
         await Promise.all(mergePromises);
         console.log("SUCCESS: Local cart merged to server.");
         clearCart();
+
+        await queryClient.invalidateQueries({ queryKey: ["cart"] });
       } catch (err) {
         console.error(err);
         toast.error("Could not merge local cart. Try again.");
@@ -110,6 +115,13 @@ const Checkout: React.FC = () => {
   ]);
 
   const { data: cartData, isLoading: isCartLoading, isError } = useFetchCart();
+
+  const setCart = useCartStore((s) => s.setCart);
+
+  useEffect(() => {
+    if (!cartData) return;
+    setCart(cartData);
+  }, [cartData, setCart]);
 
   useEffect(() => {
     if (localCart.length === 0 && !isCartLoading) {

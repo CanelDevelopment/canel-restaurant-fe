@@ -13,7 +13,7 @@ import {
 import React, { useEffect, useMemo, useState } from "react";
 import { useFormContext } from "react-hook-form";
 import { MdOutlinePayment } from "react-icons/md";
-import { BsBank } from "react-icons/bs"; // Added icon for Bank
+import { BsBank } from "react-icons/bs";
 import OnlinePaymentUI from "./onlinepayment";
 import { authClient } from "@/provider/user.provider";
 import MapPicker from "./mappicker";
@@ -47,7 +47,7 @@ export interface OrderForm {
 
 export const CheckoutForm: React.FC = () => {
   const userData = authClient.useSession();
-  const userEmail = userData.data?.user.email;
+  // const userEmail = userData.data?.user.email;
   const userPhoneNumber = userData.data?.user.phoneNumber;
 
   const {
@@ -229,18 +229,18 @@ export const CheckoutForm: React.FC = () => {
               </Text>
             </Text>
             <Input
-              placeholder="03xx- xxx xxxx"
-              bgColor={"#fff"}
-              borderColor={"#eaeaea"}
+              placeholder="Ej: +584141234567"
+              bgColor="#fff"
+              borderColor={errors.phoneNumber ? "red.400" : "#eaeaea"}
               py={6}
-              defaultValue={userPhoneNumber || ""}
               type="tel"
+              defaultValue={userPhoneNumber || ""}
               {...register("phoneNumber", {
-                maxLength: 11,
-                minLength: 11,
+                required: "El número de teléfono es obligatorio",
                 pattern: {
                   value: /^\+?[0-9]{10,15}$/,
-                  message: "Ingrese un número de teléfono válido",
+                  message:
+                    "Ingrese un número válido (10–15 dígitos, opcional +)",
                 },
               })}
             />
@@ -381,7 +381,7 @@ export const CheckoutForm: React.FC = () => {
               borderColor={"#eaeaea"}
               py={6}
               rounded={"md"}
-              defaultValue={userEmail || ""}
+              // defaultValue={userEmail || ""}
               type="email"
               {...register("email")}
             />
